@@ -68,7 +68,7 @@ class CommentViewModelTest {
         viewModel.loadComments(videoId)
         delay(1000)
         
-        val commentId = viewModel.comments.value.firstOrNull()?.id ?: "c1"
+        val commentId = viewModel.comments.value.firstOrNull()?.id?.toString() ?: "1"
         
         // When
         viewModel.likeComment(commentId)
@@ -86,7 +86,7 @@ class CommentViewModelTest {
         viewModel.loadComments(videoId)
         delay(1000)
         
-        val commentId = viewModel.comments.value.firstOrNull()?.id ?: "c1"
+        val commentId = viewModel.comments.value.firstOrNull()?.id?.toString() ?: "1"
         viewModel.likeComment(commentId)
         delay(500)
         
@@ -114,7 +114,7 @@ class CommentViewModelTest {
         val initialLikeCount = comment!!.likeCount
         
         // When
-        viewModel.likeComment(comment.id)
+        viewModel.likeComment(comment.id.toString())
         delay(500)
         
         // Then

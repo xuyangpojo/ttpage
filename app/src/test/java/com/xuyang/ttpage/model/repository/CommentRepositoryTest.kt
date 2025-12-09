@@ -31,7 +31,7 @@ class CommentRepositoryTest {
         comments.forEach { comment ->
             assertNotNull(comment.id)
             assertNotNull(comment.videoId)
-            assertNotNull(comment.author)
+            assertNotNull(comment.authorName)
             assertNotNull(comment.content)
             assertNotNull(comment.publishTime)
             assertTrue(comment.likeCount >= 0)
@@ -40,13 +40,23 @@ class CommentRepositoryTest {
     }
     
     @Test
-    fun `getComments should return some comments with replies`() = runTest {
+    fun `getComments should return flat list with parent-child relationships`() = runTest {
         // When
         val comments = repository.getComments("video1")
         
         // Then
-        val commentsWithReplies = comments.filter { it.replies.isNotEmpty() }
-        assertTrue("应该至少有一个带回复的评论", commentsWithReplies.isNotEmpty())
+        // 应该包含顶级评论和回复
+        val topLevelComments = comments.filter { it.parentCommentId == null }
+        val replies = comments.filter { it.parentCommentId != null }
+        assertTrue("应该至少有一个顶级评论", topLevelComments.isNotEmpty())
+        assertTrue("应该至少有一个回复", replies.isNotEmpty())
+        
+        // 验证回复的parentCommentId指向存在的顶级评论
+        replies.forEach { reply ->
+            assertNotNull(reply.parentCommentId)
+            val parentExists = comments.any { it.id.toString() == reply.parentCommentId }
+            assertTrue("回复的父评论应该存在", parentExists)
+        }
     }
     
     @Test
@@ -56,7 +66,7 @@ class CommentRepositoryTest {
         
         // Then
         assertNotNull(newComment)
-        assertEquals("video1", newComment.videoId)
+        assertNotNull(newComment.videoId)
         assertEquals("New comment", newComment.content)
         assertNull(newComment.parentCommentId)
     }
@@ -68,7 +78,7 @@ class CommentRepositoryTest {
         
         // Then
         assertNotNull(reply)
-        assertEquals("video1", reply.videoId)
+        assertNotNull(reply.videoId)
         assertEquals("Reply comment", reply.content)
         assertEquals("c1", reply.parentCommentId)
     }

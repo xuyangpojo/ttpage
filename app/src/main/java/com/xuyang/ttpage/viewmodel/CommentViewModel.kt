@@ -3,10 +3,12 @@ package com.xuyang.ttpage.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.xuyang.ttpage.model.data.Comment
+import com.xuyang.ttpage.model.data.CommentWithReplies
 import com.xuyang.ttpage.model.repository.CommentRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -16,9 +18,14 @@ class CommentViewModel : ViewModel() {
     
     private val repository = CommentRepository()
     
-    // UI状态：评论列表
+    // UI状态：评论列表（扁平化）
     private val _comments = MutableStateFlow<List<Comment>>(emptyList())
     val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
+    
+    // UI状态：树形结构的评论列表（用于UI展示）
+    val commentsWithReplies: StateFlow<List<CommentWithReplies>> = _comments.map { flatComments ->
+        buildCommentTree(flatComments)
+    }.asStateFlow()
     
     // UI状态：加载状态
     private val _isLoading = MutableStateFlow(false)
@@ -74,7 +81,7 @@ class CommentViewModel : ViewModel() {
                 _likedCommentIds.value = _likedCommentIds.value + commentId
                 // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
-                    if (comment.id == commentId) {
+                    if (comment.id.toString() == commentId) {
                         comment.copy(likeCount = comment.likeCount + 1)
                     } else {
                         comment
@@ -96,7 +103,7 @@ class CommentViewModel : ViewModel() {
                 _likedCommentIds.value = _likedCommentIds.value - commentId
                 // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
-                    if (comment.id == commentId) {
+                    if (comment.id.toString() == commentId) {
                         comment.copy(likeCount = maxOf(0, comment.likeCount - 1))
                     } else {
                         comment
@@ -113,6 +120,38 @@ class CommentViewModel : ViewModel() {
      */
     fun clearError() {
         _errorMessage.value = null
+    }
+    
+    /**
+     * 将扁平化的评论列表构建成树形结构
+     * @param flatComments 扁平化的评论列表
+     * @return 树形结构的评论列表（只包含顶级评论，回复嵌套在replies中）
+     */
+    private fun buildCommentTree(flatComments: List<Comment>): List<CommentWithReplies> {
+        // 将评论按ID建立索引
+        val commentMap = flatComments.associateBy { it.id.toString() }
+        
+        // 找出所有顶级评论（parentCommentId为null）
+        val topLevelComments = flatComments.filter { it.parentCommentId == null }
+        
+        // 递归构建树形结构
+        fun buildReplies(parentId: String): List<CommentWithReplies> {
+            return flatComments
+                .filter { it.parentCommentId == parentId }
+                .map { comment ->
+                    CommentWithReplies(
+                        comment = comment,
+                        replies = buildReplies(comment.id.toString())
+                    )
+                }
+        }
+        
+        return topLevelComments.map { comment ->
+            CommentWithReplies(
+                comment = comment,
+                replies = buildReplies(comment.id.toString())
+            )
+        }
     }
 }
 

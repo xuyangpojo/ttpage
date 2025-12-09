@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xuyang.ttpage.model.data.Comment
+import com.xuyang.ttpage.model.data.CommentWithReplies
 import com.xuyang.ttpage.viewmodel.CommentViewModel
 
 /**
@@ -24,7 +25,7 @@ fun CommentSection(
     viewModel: CommentViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     modifier: Modifier = Modifier
 ) {
-    val comments by viewModel.comments.collectAsState()
+    val commentsWithReplies by viewModel.commentsWithReplies.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val likedCommentIds by viewModel.likedCommentIds.collectAsState()
     
@@ -38,12 +39,12 @@ fun CommentSection(
     ) {
         // 评论区标题
         Text(
-            text = "评论区 (${comments.size})",
+            text = "评论区 (${commentsWithReplies.size})",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold
         )
         
-        if (isLoading && comments.isEmpty()) {
+        if (isLoading && commentsWithReplies.isEmpty()) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
         } else {
             // 评论列表
@@ -51,16 +52,17 @@ fun CommentSection(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(comments) { comment ->
+                items(commentsWithReplies) { commentWithReplies ->
                     CommentItem(
-                        comment = comment,
-                        isLiked = likedCommentIds.contains(comment.id),
+                        commentWithReplies = commentWithReplies,
+                        isLiked = likedCommentIds.contains(commentWithReplies.comment.id.toString()),
                         likedReplyIds = likedCommentIds,
                         onLikeClick = {
-                            if (likedCommentIds.contains(comment.id)) {
-                                viewModel.unlikeComment(comment.id)
+                            val commentId = commentWithReplies.comment.id.toString()
+                            if (likedCommentIds.contains(commentId)) {
+                                viewModel.unlikeComment(commentId)
                             } else {
-                                viewModel.likeComment(comment.id)
+                                viewModel.likeComment(commentId)
                             }
                         },
                         onReplyLikeClick = { replyId ->
@@ -74,7 +76,7 @@ fun CommentSection(
                             // TODO: 显示回复输入框
                         },
                         onAddReply = { parentCommentId, replyContent ->
-                            viewModel.addComment(comment.videoId, replyContent, parentCommentId)
+                            viewModel.addComment(commentWithReplies.comment.videoId.toString(), replyContent, parentCommentId)
                         }
                     )
                 }
@@ -97,7 +99,7 @@ fun CommentSection(
  */
 @Composable
 fun CommentItem(
-    comment: Comment,
+    commentWithReplies: CommentWithReplies,
     isLiked: Boolean,
     likedReplyIds: Set<String>,
     onLikeClick: () -> Unit,
@@ -106,6 +108,7 @@ fun CommentItem(
     onAddReply: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val comment = commentWithReplies.comment
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
@@ -120,7 +123,7 @@ fun CommentItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = comment.author,
+                    text = comment.authorName,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -164,7 +167,7 @@ fun CommentItem(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier.clickable { onReplyClick(comment.id) }
+                    modifier = Modifier.clickable { onReplyClick(comment.id.toString()) }
                 ) {
                     Icon(
                         imageVector = Icons.Default.Reply,
@@ -179,13 +182,13 @@ fun CommentItem(
             }
             
             // 回复列表
-            if (comment.replies.isNotEmpty()) {
+            if (commentWithReplies.replies.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                comment.replies.forEach { reply ->
+                commentWithReplies.replies.forEach { replyWithReplies ->
                     ReplyItem(
-                        reply = reply,
-                        isLiked = likedReplyIds.contains(reply.id),
-                        onLikeClick = { onReplyLikeClick(reply.id) },
+                        reply = replyWithReplies.comment,
+                        isLiked = likedReplyIds.contains(replyWithReplies.comment.id.toString()),
+                        onLikeClick = { onReplyLikeClick(replyWithReplies.comment.id.toString()) },
                         modifier = Modifier.padding(start = 16.dp)
                     )
                 }
@@ -219,7 +222,7 @@ fun ReplyItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = reply.author,
+                    text = reply.authorName,
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Bold
                 )

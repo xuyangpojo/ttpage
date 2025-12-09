@@ -12,10 +12,10 @@ class CommentTest {
     fun `comment should have all required fields`() {
         // Given & When
         val comment = Comment(
-            id = "c1",
-            videoId = "video1",
-            authorId = "author1",
-            author = "Test Author",
+            id = 1L,
+            videoId = 1L,
+            authorId = 1L,
+            authorName = "Test Author",
             content = "Test comment",
             publishTime = "1小时前",
             likeCount = 10,
@@ -23,77 +23,89 @@ class CommentTest {
         )
         
         // Then
-        assertEquals("c1", comment.id)
-        assertEquals("video1", comment.videoId)
-        assertEquals("Test Author", comment.author)
+        assertEquals(1L, comment.id)
+        assertEquals(1L, comment.videoId)
+        assertEquals(1L, comment.authorId)
+        assertEquals("Test Author", comment.authorName)
         assertEquals("Test comment", comment.content)
         assertEquals("1小时前", comment.publishTime)
         assertEquals(10, comment.likeCount)
         assertEquals(2, comment.replyCount)
         assertNull(comment.parentCommentId)
-        assertTrue(comment.replies.isEmpty())
     }
     
     @Test
     fun `comment with parent should have parentCommentId`() {
         // Given & When
         val reply = Comment(
-            id = "c1-1",
-            videoId = "video1",
-            author = "Reply Author",
+            id = 2L,
+            videoId = 1L,
+            authorId = 2L,
+            authorName = "Reply Author",
             content = "Reply content",
             publishTime = "30分钟前",
             likeCount = 5,
             replyCount = 0,
-            parentCommentId = "c1"
+            parentCommentId = "1"
         )
         
         // Then
-        assertEquals("c1", reply.parentCommentId)
+        assertEquals("1", reply.parentCommentId)
     }
     
     @Test
-    fun `comment with replies should have replies list`() {
+    fun `CommentWithReplies should build tree structure correctly`() {
         // Given
+        val parentComment = Comment(
+            id = 1L,
+            videoId = 1L,
+            authorId = 1L,
+            authorName = "Parent Author",
+            content = "Parent comment",
+            publishTime = "1小时前",
+            likeCount = 10,
+            replyCount = 2,
+            parentCommentId = null
+        )
+        
         val reply1 = Comment(
-            id = "c1-1",
-            videoId = "video1",
-            author = "Reply1",
+            id = 2L,
+            videoId = 1L,
+            authorId = 2L,
+            authorName = "Reply1",
             content = "Reply 1",
             publishTime = "30分钟前",
             likeCount = 3,
             replyCount = 0,
-            parentCommentId = "c1"
+            parentCommentId = "1"
         )
         
         val reply2 = Comment(
-            id = "c1-2",
-            videoId = "video1",
-            author = "Reply2",
+            id = 3L,
+            videoId = 1L,
+            authorId = 3L,
+            authorName = "Reply2",
             content = "Reply 2",
             publishTime = "20分钟前",
             likeCount = 1,
             replyCount = 0,
-            parentCommentId = "c1"
+            parentCommentId = "1"
         )
         
         // When
-        val comment = Comment(
-            id = "c1",
-            videoId = "video1",
-            authorId = "author1",
-            author = "Author",
-            content = "Comment",
-            publishTime = "1小时前",
-            likeCount = 10,
-            replyCount = 2,
-            replies = listOf(reply1, reply2)
+        val commentWithReplies = CommentWithReplies(
+            comment = parentComment,
+            replies = listOf(
+                CommentWithReplies(comment = reply1),
+                CommentWithReplies(comment = reply2)
+            )
         )
         
         // Then
-        assertEquals(2, comment.replies.size)
-        assertEquals("c1-1", comment.replies[0].id)
-        assertEquals("c1-2", comment.replies[1].id)
+        assertEquals(parentComment.id, commentWithReplies.comment.id)
+        assertEquals(2, commentWithReplies.replies.size)
+        assertEquals(2L, commentWithReplies.replies[0].comment.id)
+        assertEquals(3L, commentWithReplies.replies[1].comment.id)
     }
 }
 

@@ -7,17 +7,25 @@ package com.xuyang.ttpage.model.data
  * @date 2025-12-9
  */
 data class Comment(
-    val id: String,
-    // foreign key
-    val videoId: String,
-    // foreign key
-    val authorId: String,
-    val author: String,  // 作者名称（显示用）
+    val id: Long,
+    // foreign key: Video.kt
+    val videoId: Long,
+    // foreign key: User.kt
+    val authorId: Long,
+    val authorName: String,
     val content: String,
     val publishTime: String,
     val likeCount: Int,
     val replyCount: Int,
-    val parentCommentId: String? = null,  // 父评论ID，null表示顶级评论
-    val replies: List<Comment> = emptyList()  // 回复列表
+    // foreign key: Comment.kt
+    // 父评论ID，为null时代表顶级评论（不是回复）
+    val parentCommentId: String? = null
 )
 
+/**
+ * 带回复的评论（用于UI展示的树形结构）
+ */
+data class CommentWithReplies(
+    val comment: Comment,
+    val replies: List<CommentWithReplies> = emptyList()
+)
