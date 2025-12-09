@@ -7,12 +7,18 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import com.xuyang.ttpage.ui.screens.HomeScreen
 import com.xuyang.ttpage.ui.theme.TTPageTheme
 
+/**
+ * MainActivity - View层入口
+ * 
+ * MVVM架构中，Activity只负责：
+ * 1. 设置UI主题
+ * 2. 加载主界面（Screen）
+ * 3. 不包含业务逻辑
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,27 +26,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             TTPageTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
+                    // 使用MVVM架构的HomeScreen
+                    // ViewModel会在HomeScreen内部自动创建
+                    HomeScreen(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
             }
         }
-    }
-}
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    TTPageTheme {
-        Greeting("Android")
     }
 }
