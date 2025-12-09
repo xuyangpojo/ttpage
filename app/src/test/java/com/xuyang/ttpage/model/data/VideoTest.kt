@@ -4,14 +4,14 @@ import org.junit.Assert.*
 import org.junit.Test
 
 /**
- * Content数据模型单元测试
+ * Video数据模型单元测试
  */
-class ContentTest {
+class VideoTest {
     
     @Test
     fun `hasVideo should return true when videoUrl is not null or blank`() {
         // Given
-        val contentWithVideo = Content(
+        val videoWithVideo = Video(
             id = "1",
             title = "Test",
             author = "Author",
@@ -23,13 +23,13 @@ class ContentTest {
         )
         
         // When & Then
-        assertTrue(contentWithVideo.hasVideo)
+        assertTrue(videoWithVideo.hasVideo)
     }
     
     @Test
     fun `hasVideo should return false when videoUrl is null`() {
         // Given
-        val contentWithoutVideo = Content(
+        val videoWithoutVideo = Video(
             id = "1",
             title = "Test",
             author = "Author",
@@ -41,13 +41,13 @@ class ContentTest {
         )
         
         // When & Then
-        assertFalse(contentWithoutVideo.hasVideo)
+        assertFalse(videoWithoutVideo.hasVideo)
     }
     
     @Test
     fun `hasVideo should return false when videoUrl is blank`() {
         // Given
-        val contentWithBlankVideo = Content(
+        val videoWithBlankVideo = Video(
             id = "1",
             title = "Test",
             author = "Author",
@@ -59,13 +59,13 @@ class ContentTest {
         )
         
         // When & Then
-        assertFalse(contentWithBlankVideo.hasVideo)
+        assertFalse(videoWithBlankVideo.hasVideo)
     }
     
     @Test
-    fun `content should have all required fields`() {
+    fun `video should have all required fields`() {
         // Given & When
-        val content = Content(
+        val video = Video(
             id = "1",
             title = "Test Title",
             author = "Test Author",
@@ -78,21 +78,21 @@ class ContentTest {
         )
         
         // Then
-        assertEquals("1", content.id)
-        assertEquals("Test Title", content.title)
-        assertEquals("Test Author", content.author)
-        assertEquals("2小时前", content.publishTime)
-        assertEquals(100, content.likeCount)
-        assertEquals(50, content.commentCount)
-        assertTrue(content.isHot)
-        assertEquals("cover1", content.videoCover)
-        assertEquals("video1", content.videoUrl)
+        assertEquals("1", video.id)
+        assertEquals("Test Title", video.title)
+        assertEquals("Test Author", video.author)
+        assertEquals("2小时前", video.publishTime)
+        assertEquals(100, video.likeCount)
+        assertEquals(50, video.commentCount)
+        assertTrue(video.isHot)
+        assertEquals("cover1", video.videoCover)
+        assertEquals("video1", video.videoUrl)
     }
     
     @Test
-    fun `content equals should work correctly`() {
+    fun `video equals should work correctly`() {
         // Given
-        val content1 = Content(
+        val video1 = Video(
             id = "1",
             title = "Test",
             author = "Author",
@@ -102,7 +102,7 @@ class ContentTest {
             isHot = false
         )
         
-        val content2 = Content(
+        val video2 = Video(
             id = "1",
             title = "Test",
             author = "Author",
@@ -113,7 +113,7 @@ class ContentTest {
         )
         
         // When & Then
-        assertEquals(content1, content2)
+        assertEquals(video1, video2)
     }
 }
 

@@ -9,15 +9,16 @@ import kotlinx.coroutines.delay
 class CommentRepository {
     
     /**
-     * 获取内容的评论列表
+     * 获取视频的评论列表
      */
-    suspend fun getComments(contentId: String): List<Comment> {
+    suspend fun getComments(videoId: String): List<Comment> {
         delay(500)
         
         return listOf(
             Comment(
                 id = "c1",
-                contentId = contentId,
+                videoId = videoId,
+                authorId = "userA",
                 author = "用户A",
                 content = "这个内容很不错，学到了很多！",
                 publishTime = "1小时前",
@@ -26,7 +27,8 @@ class CommentRepository {
                 replies = listOf(
                     Comment(
                         id = "c1-1",
-                        contentId = contentId,
+                        videoId = videoId,
+                        authorId = "userB",
                         author = "用户B",
                         content = "同感！",
                         publishTime = "30分钟前",
@@ -36,7 +38,8 @@ class CommentRepository {
                     ),
                     Comment(
                         id = "c1-2",
-                        contentId = contentId,
+                        videoId = videoId,
+                        authorId = "userC",
                         author = "用户C",
                         content = "确实很有帮助",
                         publishTime = "20分钟前",
@@ -48,7 +51,8 @@ class CommentRepository {
             ),
             Comment(
                 id = "c2",
-                contentId = contentId,
+                videoId = videoId,
+                authorId = "userD",
                 author = "用户D",
                 content = "希望能有更多这样的内容",
                 publishTime = "2小时前",
@@ -57,7 +61,8 @@ class CommentRepository {
                 replies = listOf(
                     Comment(
                         id = "c2-1",
-                        contentId = contentId,
+                        videoId = videoId,
+                        authorId = "userE",
                         author = "用户E",
                         content = "支持！",
                         publishTime = "1小时前",
@@ -69,7 +74,8 @@ class CommentRepository {
             ),
             Comment(
                 id = "c3",
-                contentId = contentId,
+                videoId = videoId,
+                authorId = "userF",
                 author = "用户F",
                 content = "感谢分享",
                 publishTime = "3小时前",
@@ -82,11 +88,12 @@ class CommentRepository {
     /**
      * 添加评论
      */
-    suspend fun addComment(contentId: String, content: String, parentCommentId: String? = null): Comment {
+    suspend fun addComment(videoId: String, content: String, parentCommentId: String? = null): Comment {
         delay(300)
         return Comment(
             id = "c${System.currentTimeMillis()}",
-            contentId = contentId,
+            videoId = videoId,
+            authorId = "currentUser",
             author = "当前用户",
             content = content,
             publishTime = "刚刚",

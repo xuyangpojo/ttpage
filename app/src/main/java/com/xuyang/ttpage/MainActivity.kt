@@ -11,12 +11,10 @@ import com.xuyang.ttpage.ui.MainScreen
 import com.xuyang.ttpage.ui.theme.TTPageTheme
 
 /**
- * MainActivity - View层入口
- * 
- * MVVM架构中，Activity只负责：
- * 1. 设置UI主题
- * 2. 初始化Navigation
- * 3. 加载导航图
+ * MainActivity 入口文件
+ * @brief 进行初始加载
+ * @author xuyang
+ * @date 2025-12-9
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,10 +22,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TTPageTheme {
-                // 创建NavController
                 val navController = rememberNavController()
-                
-                // 设置主屏幕（包含底部导航栏）
                 MainScreen(
                     navController = navController,
                     modifier = Modifier.fillMaxSize()

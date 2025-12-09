@@ -19,7 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.ui.components.CommentSection
 import com.xuyang.ttpage.ui.components.VideoPlayer
 import com.xuyang.ttpage.viewmodel.FavoriteViewModel
@@ -37,37 +37,37 @@ import kotlin.math.abs
  */
 @Composable
 fun DetailScreen(
-    content: Content,
+    video: Video,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     favoriteViewModel: FavoriteViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val context = LocalContext.current
-    val contents = homeViewModel.contents.collectAsState().value
-    val isFavorite = favoriteViewModel.isFavorite(content.id)
+    val videos = homeViewModel.videos.collectAsState().value
+    val isFavorite = favoriteViewModel.isFavorite(video.id)
     
     // 添加浏览历史
-    LaunchedEffect(content.id) {
-        favoriteViewModel.addHistory(content.id)
+    LaunchedEffect(video.id) {
+        favoriteViewModel.addHistory(video.id)
     }
     
-    // 找到当前内容在列表中的索引
-    val currentIndex = remember(content.id) {
-        contents.indexOfFirst { it.id == content.id }.coerceAtLeast(0)
+    // 找到当前视频在列表中的索引
+    val currentIndex = remember(video.id) {
+        videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
     }
     
     // 创建垂直Pager状态
     val pagerState = rememberPagerState(
         initialPage = currentIndex,
-        pageCount = { contents.size.coerceAtLeast(1) }
+        pageCount = { videos.size.coerceAtLeast(1) }
     )
     
-    // 当内容列表变化时，更新页面数量
-    LaunchedEffect(contents.size) {
-        if (pagerState.pageCount != contents.size) {
+    // 当视频列表变化时，更新页面数量
+    LaunchedEffect(videos.size) {
+        if (pagerState.pageCount != videos.size) {
             // 如果当前页面超出范围，跳转到最后一页
-            val targetPage = currentIndex.coerceIn(0, contents.size - 1)
+            val targetPage = currentIndex.coerceIn(0, videos.size - 1)
             if (targetPage != pagerState.currentPage) {
                 pagerState.animateScrollToPage(targetPage)
             }
@@ -79,7 +79,7 @@ fun DetailScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        text = "内容详情 (${pagerState.currentPage + 1}/${contents.size})"
+                        text = "视频详情 (${pagerState.currentPage + 1}/${videos.size})"
                     )
                 },
                 navigationIcon = {
@@ -99,12 +99,12 @@ fun DetailScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            key = { index -> contents.getOrNull(index)?.id ?: index }
+            key = { index -> videos.getOrNull(index)?.id ?: index }
         ) { page ->
-            val currentContent = contents.getOrNull(page) ?: content
+            val currentVideo = videos.getOrNull(page) ?: video
             
-            DetailContentPage(
-                content = currentContent,
+            DetailVideoPage(
+                video = currentVideo,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -112,22 +112,22 @@ fun DetailScreen(
 }
 
 /**
- * 详情页内容页面
+ * 详情页视频页面
  */
 @Composable
-fun DetailContentPage(
-    content: Content,
+fun DetailVideoPage(
+    video: Video,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var isLiked by remember { mutableStateOf(false) }
-    var likeCount by remember { mutableIntStateOf(content.likeCount) }
+    var likeCount by remember { mutableIntStateOf(video.likeCount) }
     
     // 复制链接到剪贴板
     fun copyLinkToClipboard() {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val link = "https://ttpage.example.com/content/${content.id}"
-        val clip = ClipData.newPlainText("内容链接", link)
+        val link = "https://ttpage.example.com/video/${video.id}"
+        val clip = ClipData.newPlainText("视频链接", link)
         clipboard.setPrimaryClip(clip)
     }
     
@@ -150,16 +150,16 @@ fun DetailContentPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = content.title,
+                text = video.title,
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
             
             // 视频播放器（如果有视频）
-            if (content.hasVideo && !content.videoUrl.isNullOrBlank()) {
+            if (video.hasVideo && !video.videoUrl.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 VideoPlayer(
-                    videoUrl = content.videoUrl!!,
+                    videoUrl = video.videoUrl!!,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(200.dp)
@@ -176,7 +176,7 @@ fun DetailContentPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = content.id,
+                text = video.id,
                 style = MaterialTheme.typography.bodyLarge
             )
             
@@ -189,7 +189,7 @@ fun DetailContentPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = content.author,
+                text = video.author,
                 style = MaterialTheme.typography.bodyLarge
             )
             
@@ -202,7 +202,7 @@ fun DetailContentPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = content.publishTime,
+                text = video.publishTime,
                 style = MaterialTheme.typography.bodyLarge
             )
             
@@ -237,7 +237,7 @@ fun DetailContentPage(
                 Row(
                     modifier = Modifier
                         .weight(1f)
-                        .clickable { favoriteViewModel.toggleFavorite(content.id) },
+                        .clickable { favoriteViewModel.toggleFavorite(video.id) },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
@@ -285,7 +285,7 @@ fun DetailContentPage(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "评论数: ${content.commentCount}",
+                    text = "评论数: ${video.commentCount}",
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -299,14 +299,14 @@ fun DetailContentPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Surface(
-                color = if (content.isHot) 
+                color = if (video.isHot) 
                     MaterialTheme.colorScheme.errorContainer 
                 else 
                     MaterialTheme.colorScheme.surfaceVariant,
                 shape = MaterialTheme.shapes.small
             ) {
                 Text(
-                    text = if (content.isHot) "是" else "否",
+                    text = if (video.isHot) "是" else "否",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.bodyLarge,
                     color = if (content.isHot) 
@@ -332,16 +332,16 @@ fun DetailContentPage(
             ) {
                 Text(
                     text = """
-                        Content(
-                            id = "${content.id}",
-                            title = "${content.title}",
-                            author = "${content.author}",
-                            publishTime = "${content.publishTime}",
-                            likeCount = ${content.likeCount},
-                            commentCount = ${content.commentCount},
-                            isHot = ${content.isHot},
-                            videoCover = ${content.videoCover?.let { "\"$it\"" } ?: "null"},
-                            videoUrl = ${content.videoUrl?.let { "\"$it\"" } ?: "null"}
+                        Video(
+                            id = "${video.id}",
+                            title = "${video.title}",
+                            author = "${video.author}",
+                            publishTime = "${video.publishTime}",
+                            likeCount = ${video.likeCount},
+                            commentCount = ${video.commentCount},
+                            isHot = ${video.isHot},
+                            videoCover = ${video.videoCover?.let { "\"$it\"" } ?: "null"},
+                            videoUrl = ${video.videoUrl?.let { "\"$it\"" } ?: "null"}
                         )
                     """.trimIndent(),
                     modifier = Modifier.padding(16.dp),
@@ -353,7 +353,7 @@ fun DetailContentPage(
             Divider()
             
             // 评论区
-            CommentSection(contentId = content.id)
+            CommentSection(videoId = video.id)
         }
     }
 }

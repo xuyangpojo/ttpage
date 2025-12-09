@@ -33,7 +33,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.pullrefresh.PullRefreshIndicator
 import androidx.compose.material3.pullrefresh.pullRefresh
 import androidx.compose.material3.pullrefresh.rememberPullRefreshState
-import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.model.data.Topic
 import com.xuyang.ttpage.util.ResourceHelper
 import com.xuyang.ttpage.viewmodel.HomeViewModel
@@ -56,12 +56,12 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(),
     topicViewModel: TopicViewModel = viewModel(),
-    onContentClick: (Content) -> Unit = {},
-    onRefreshRequest: () -> Unit = { viewModel.refreshContents() },
+    onVideoClick: (Video) -> Unit = {},
+    onRefreshRequest: () -> Unit = { viewModel.refreshVideos() },
     scrollToTopTrigger: Int = 0
 ) {
     // 观察ViewModel的状态
-    val contents by viewModel.contents.collectAsState()
+    val videos by viewModel.videos.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val currentTopicId by viewModel.currentTopicId.collectAsState()
     val hasMore by viewModel.hasMore.collectAsState()
@@ -76,13 +76,13 @@ fun HomeScreen(
     // 下拉刷新状态
     val pullRefreshState = rememberPullRefreshState(
         refreshing = isLoading && contents.isNotEmpty(),
-        onRefresh = { viewModel.refreshContents() }
+        onRefresh = { viewModel.refreshVideos() }
     )
     
     // 话题切换时刷新内容
     LaunchedEffect(selectedTopicId) {
         if (selectedTopicId != currentTopicId) {
-            viewModel.loadContents(selectedTopicId, refresh = true)
+            viewModel.loadVideos(selectedTopicId, refresh = true)
             leftListState.animateScrollToItem(0)
             rightListState.animateScrollToItem(0)
         }
@@ -105,7 +105,7 @@ fun HomeScreen(
         val rightTotal = rightListState.layoutInfo.totalItemsCount
         
         if ((leftLastVisible >= leftTotal - 2 || rightLastVisible >= rightTotal - 2) && hasMore && !isLoading) {
-            viewModel.loadMoreContents()
+            viewModel.loadMoreVideos()
         }
     }
     
@@ -119,7 +119,7 @@ fun HomeScreen(
             }
         )
         
-        if (isLoading && contents.isEmpty()) {
+        if (isLoading && videos.isEmpty()) {
             // 加载中显示
             Box(
                 modifier = Modifier.fillMaxSize(),
@@ -148,15 +148,15 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 0 }) { _, content ->
-                        ContentCard(
-                            content = content,
-                            onClick = { onContentClick(content) }
-                        )
-                    }
-                    
-                    // 加载更多指示器
-                    if (isLoading && contents.isNotEmpty()) {
+                itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 0 }) { _, video ->
+                    VideoCard(
+                        video = video,
+                        onClick = { onVideoClick(video) }
+                    )
+                }
+                
+                // 加载更多指示器
+                if (isLoading && videos.isNotEmpty()) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -179,15 +179,15 @@ fun HomeScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
-                    itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 1 }) { _, content ->
-                        ContentCard(
-                            content = content,
-                            onClick = { onContentClick(content) }
-                        )
-                    }
-                    
-                    // 加载更多指示器
-                    if (isLoading && contents.isNotEmpty()) {
+                itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 1 }) { _, video ->
+                    VideoCard(
+                        video = video,
+                        onClick = { onVideoClick(video) }
+                    )
+                }
+                
+                // 加载更多指示器
+                if (isLoading && videos.isNotEmpty()) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -292,11 +292,11 @@ fun TopicTabItem(
 }
 
 /**
- * 内容卡片组件
+ * 视频卡片组件
  */
 @Composable
-fun ContentCard(
-    content: Content,
+fun VideoCard(
+    video: Video,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {}
 ) {
@@ -313,11 +313,11 @@ fun ContentCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // 视频封面（如果有）- 自适应布局
-            if (content.hasVideo && !content.videoCover.isNullOrBlank()) {
+            if (video.hasVideo && !video.videoCover.isNullOrBlank()) {
                 val context = LocalContext.current
                 val coverResourceId = try {
                     context.resources.getIdentifier(
-                        content.videoCover,
+                        video.videoCover,
                         "drawable",
                         context.packageName
                     )
@@ -371,7 +371,7 @@ fun ContentCard(
             
             // 标题
             Text(
-                text = content.title,
+                text = video.title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 maxLines = 3,
@@ -387,12 +387,12 @@ fun ContentCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = content.author,
+                    text = video.author,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = content.publishTime,
+                    text = video.publishTime,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -405,7 +405,7 @@ fun ContentCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // 热门标签
-                if (content.isHot) {
+                if (video.isHot) {
                     Surface(
                         color = MaterialTheme.colorScheme.errorContainer,
                         shape = MaterialTheme.shapes.small
@@ -434,7 +434,7 @@ fun ContentCard(
                             fontSize = 14.sp
                         )
                         Text(
-                            text = "${content.likeCount}",
+                            text = "${video.likeCount}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -449,7 +449,7 @@ fun ContentCard(
                             fontSize = 14.sp
                         )
                         Text(
-                            text = "${content.commentCount}",
+                            text = "${video.commentCount}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

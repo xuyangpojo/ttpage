@@ -2,9 +2,9 @@ package com.xuyang.ttpage.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xuyang.ttpage.model.data.Content
-import com.xuyang.ttpage.model.repository.ContentRepository
+import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.model.repository.TopicRepository
+import com.xuyang.ttpage.model.repository.VideoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,19 +14,19 @@ import kotlinx.coroutines.launch
  * ViewModel层：首页视图模型
  * 
  * 职责：
- * 1. 管理内容列表状态
+ * 1. 管理视频列表状态
  * 2. 处理数据加载
  * 3. 与Repository通信获取数据
- * 4. 支持按话题加载内容
+ * 4. 支持按话题加载视频
  */
 class HomeViewModel : ViewModel() {
     
-    private val contentRepository = ContentRepository()
+    private val videoRepository = VideoRepository()
     private val topicRepository = TopicRepository()
     
-    // UI状态：内容列表
-    private val _contents = MutableStateFlow<List<Content>>(emptyList())
-    val contents: StateFlow<List<Content>> = _contents.asStateFlow()
+    // UI状态：视频列表
+    private val _videos = MutableStateFlow<List<Video>>(emptyList())
+    val videos: StateFlow<List<Video>> = _videos.asStateFlow()
     
     // UI状态：加载状态
     private val _isLoading = MutableStateFlow(false)
@@ -40,48 +40,48 @@ class HomeViewModel : ViewModel() {
     private val _currentTopicId = MutableStateFlow<String>("all")
     val currentTopicId: StateFlow<String> = _currentTopicId.asStateFlow()
     
-    // UI状态：是否有更多内容
+    // UI状态：是否有更多视频
     private val _hasMore = MutableStateFlow(true)
     val hasMore: StateFlow<Boolean> = _hasMore.asStateFlow()
     
     init {
         // 初始化时加载数据
-        loadContents()
+        loadVideos()
     }
     
     /**
-     * 根据ID获取内容
+     * 根据ID获取视频
      */
-    fun getContentById(id: String): Content? {
-        return _contents.value.find { it.id == id }
+    fun getVideoById(id: String): Video? {
+        return _videos.value.find { it.id == id }
     }
     
     /**
-     * 加载内容列表
+     * 加载视频列表
      */
-    fun loadContents(topicId: String = "all", refresh: Boolean = false) {
+    fun loadVideos(topicId: String = "all", refresh: Boolean = false) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
                 _currentTopicId.value = topicId
                 
-                val newContents = if (topicId == "all") {
-                    contentRepository.getRecommendedContents()
+                val newVideos = if (topicId == "all") {
+                    videoRepository.getRecommendedVideos()
                 } else {
-                    topicRepository.getContentsByTopic(topicId)
+                    topicRepository.getVideosByTopic(topicId)
                 }
                 
                 if (refresh) {
-                    _contents.value = newContents
+                    _videos.value = newVideos
                 } else {
                     // 加载更多时追加
-                    val existingIds = _contents.value.map { it.id }.toSet()
-                    val filteredNew = newContents.filter { it.id !in existingIds }
-                    _contents.value = _contents.value + filteredNew
+                    val existingIds = _videos.value.map { it.id }.toSet()
+                    val filteredNew = newVideos.filter { it.id !in existingIds }
+                    _videos.value = _videos.value + filteredNew
                 }
                 
-                _hasMore.value = newContents.isNotEmpty()
+                _hasMore.value = newVideos.isNotEmpty()
             } catch (e: Exception) {
                 _errorMessage.value = "加载失败: ${e.message}"
             } finally {
@@ -91,18 +91,18 @@ class HomeViewModel : ViewModel() {
     }
     
     /**
-     * 刷新内容
+     * 刷新视频
      */
-    fun refreshContents() {
-        loadContents(_currentTopicId.value, refresh = true)
+    fun refreshVideos() {
+        loadVideos(_currentTopicId.value, refresh = true)
     }
     
     /**
-     * 加载更多内容
+     * 加载更多视频
      */
-    fun loadMoreContents() {
+    fun loadMoreVideos() {
         if (!_isLoading.value && _hasMore.value) {
-            loadContents(_currentTopicId.value, refresh = false)
+            loadVideos(_currentTopicId.value, refresh = false)
         }
     }
     

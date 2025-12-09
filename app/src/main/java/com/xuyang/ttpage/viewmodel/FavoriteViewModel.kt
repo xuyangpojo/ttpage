@@ -2,7 +2,7 @@ package com.xuyang.ttpage.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.model.repository.FavoriteRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,17 +25,17 @@ class FavoriteViewModel : ViewModel() {
     private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
     val favoriteIds: StateFlow<Set<String>> = _favoriteIds.asStateFlow()
     
-    // UI状态：收藏的内容列表
-    private val _favorites = MutableStateFlow<List<Content>>(emptyList())
-    val favorites: StateFlow<List<Content>> = _favorites.asStateFlow()
+    // UI状态：收藏的视频列表
+    private val _favorites = MutableStateFlow<List<Video>>(emptyList())
+    val favorites: StateFlow<List<Video>> = _favorites.asStateFlow()
     
     // UI状态：浏览历史ID列表
     private val _historyIds = MutableStateFlow<List<String>>(emptyList())
     val historyIds: StateFlow<List<String>> = _historyIds.asStateFlow()
     
-    // UI状态：浏览历史内容列表
-    private val _history = MutableStateFlow<List<Content>>(emptyList())
-    val history: StateFlow<List<Content>> = _history.asStateFlow()
+    // UI状态：浏览历史视频列表
+    private val _history = MutableStateFlow<List<Video>>(emptyList())
+    val history: StateFlow<List<Video>> = _history.asStateFlow()
     
     // UI状态：加载状态
     private val _isLoading = MutableStateFlow(false)
@@ -48,31 +48,31 @@ class FavoriteViewModel : ViewModel() {
     }
     
     /**
-     * 检查内容是否已收藏
+     * 检查视频是否已收藏
      */
-    fun isFavorite(contentId: String): Boolean {
-        return _favoriteIds.value.contains(contentId)
+    fun isFavorite(videoId: String): Boolean {
+        return _favoriteIds.value.contains(videoId)
     }
     
     /**
      * 切换收藏状态
      */
-    fun toggleFavorite(contentId: String) {
+    fun toggleFavorite(videoId: String) {
         viewModelScope.launch {
             try {
-                val isCurrentlyFavorite = _favoriteIds.value.contains(contentId)
+                val isCurrentlyFavorite = _favoriteIds.value.contains(videoId)
                 val success = if (isCurrentlyFavorite) {
-                    repository.removeFavorite(contentId)
+                    repository.removeFavorite(videoId)
                 } else {
-                    repository.addFavorite(contentId)
+                    repository.addFavorite(videoId)
                 }
                 
                 if (success) {
                     // 更新本地状态
                     val newFavoriteIds = if (isCurrentlyFavorite) {
-                        _favoriteIds.value - contentId
+                        _favoriteIds.value - videoId
                     } else {
-                        _favoriteIds.value + contentId
+                        _favoriteIds.value + videoId
                     }
                     _favoriteIds.value = newFavoriteIds
                     
@@ -88,10 +88,10 @@ class FavoriteViewModel : ViewModel() {
     /**
      * 添加浏览历史
      */
-    fun addHistory(contentId: String) {
+    fun addHistory(videoId: String) {
         viewModelScope.launch {
             try {
-                repository.addHistory(contentId)
+                repository.addHistory(videoId)
                 // 更新历史记录列表
                 loadHistory()
             } catch (e: Exception) {
@@ -121,11 +121,11 @@ class FavoriteViewModel : ViewModel() {
     }
     
     /**
-     * 更新收藏内容列表（从内容列表填充）
+     * 更新收藏视频列表（从视频列表填充）
      */
-    fun updateFavoritesFromContents(contents: List<Content>) {
-        val favoriteContents = contents.filter { _favoriteIds.value.contains(it.id) }
-        _favorites.value = favoriteContents
+    fun updateFavoritesFromVideos(videos: List<Video>) {
+        val favoriteVideos = videos.filter { _favoriteIds.value.contains(it.id) }
+        _favorites.value = favoriteVideos
     }
     
     /**
@@ -146,13 +146,13 @@ class FavoriteViewModel : ViewModel() {
     }
     
     /**
-     * 更新历史内容列表（从内容列表填充）
+     * 更新历史视频列表（从视频列表填充）
      */
-    fun updateHistoryFromContents(contents: List<Content>) {
-        val historyContents = _historyIds.value.mapNotNull { id ->
-            contents.find { it.id == id }
+    fun updateHistoryFromVideos(videos: List<Video>) {
+        val historyVideos = _historyIds.value.mapNotNull { id ->
+            videos.find { it.id == id }
         }
-        _history.value = historyContents
+        _history.value = historyVideos
     }
     
     /**
@@ -173,10 +173,10 @@ class FavoriteViewModel : ViewModel() {
     /**
      * 删除单条历史记录
      */
-    fun removeHistory(contentId: String) {
+    fun removeHistory(videoId: String) {
         viewModelScope.launch {
             try {
-                repository.removeHistory(contentId)
+                repository.removeHistory(videoId)
                 loadHistory()
             } catch (e: Exception) {
                 // 错误处理

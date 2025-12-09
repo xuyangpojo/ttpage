@@ -1,12 +1,18 @@
 package com.xuyang.ttpage.model.data
 
 /**
- * Model层：评论数据模型
+ * Comment 评论
+ * @brief 视频评论区的评论Entity
+ * @author xuyang
+ * @date 2025-12-9
  */
 data class Comment(
     val id: String,
-    val contentId: String,  // 所属内容的ID
-    val author: String,
+    // foreign key
+    val videoId: String,
+    // foreign key
+    val authorId: String,
+    val author: String,  // 作者名称（显示用）
     val content: String,
     val publishTime: String,
     val likeCount: Int,

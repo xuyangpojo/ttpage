@@ -13,7 +13,8 @@ class CommentTest {
         // Given & When
         val comment = Comment(
             id = "c1",
-            contentId = "content1",
+            videoId = "video1",
+            authorId = "author1",
             author = "Test Author",
             content = "Test comment",
             publishTime = "1小时前",
@@ -23,7 +24,7 @@ class CommentTest {
         
         // Then
         assertEquals("c1", comment.id)
-        assertEquals("content1", comment.contentId)
+        assertEquals("video1", comment.videoId)
         assertEquals("Test Author", comment.author)
         assertEquals("Test comment", comment.content)
         assertEquals("1小时前", comment.publishTime)
@@ -38,7 +39,7 @@ class CommentTest {
         // Given & When
         val reply = Comment(
             id = "c1-1",
-            contentId = "content1",
+            videoId = "video1",
             author = "Reply Author",
             content = "Reply content",
             publishTime = "30分钟前",
@@ -56,7 +57,7 @@ class CommentTest {
         // Given
         val reply1 = Comment(
             id = "c1-1",
-            contentId = "content1",
+            videoId = "video1",
             author = "Reply1",
             content = "Reply 1",
             publishTime = "30分钟前",
@@ -67,7 +68,7 @@ class CommentTest {
         
         val reply2 = Comment(
             id = "c1-2",
-            contentId = "content1",
+            videoId = "video1",
             author = "Reply2",
             content = "Reply 2",
             publishTime = "20分钟前",
@@ -79,7 +80,8 @@ class CommentTest {
         // When
         val comment = Comment(
             id = "c1",
-            contentId = "content1",
+            videoId = "video1",
+            authorId = "author1",
             author = "Author",
             content = "Comment",
             publishTime = "1小时前",

@@ -15,8 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.xuyang.ttpage.model.data.Content
-import com.xuyang.ttpage.ui.screens.HomeScreen.ContentCard
+import com.xuyang.ttpage.model.data.Video
+import com.xuyang.ttpage.ui.screens.HomeScreen.VideoCard
 import com.xuyang.ttpage.viewmodel.FavoriteViewModel
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import com.xuyang.ttpage.viewmodel.UserViewModel
@@ -37,19 +37,19 @@ fun ProfileScreen(
     favoriteViewModel: FavoriteViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
-    onContentClick: (Content) -> Unit = {}
+    onVideoClick: (Video) -> Unit = {}
 ) {
     val currentUser by userViewModel.currentUser.collectAsState()
     val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
     
-    val contents = homeViewModel.contents.collectAsState().value
+    val videos = homeViewModel.videos.collectAsState().value
     val favorites by favoriteViewModel.favorites.collectAsState()
     val history by favoriteViewModel.history.collectAsState()
     
     // 更新收藏和历史记录列表
-    LaunchedEffect(contents) {
-        favoriteViewModel.updateFavoritesFromContents(contents)
-        favoriteViewModel.updateHistoryFromContents(contents)
+    LaunchedEffect(videos) {
+        favoriteViewModel.updateFavoritesFromVideos(videos)
+        favoriteViewModel.updateHistoryFromVideos(videos)
     }
     
     Column(
@@ -214,10 +214,10 @@ fun ProfileScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(favorites) { content ->
-                                ContentCard(
-                                    content = content,
-                                    onClick = { onContentClick(content) }
+                            items(favorites) { video ->
+                                VideoCard(
+                                    video = video,
+                                    onClick = { onVideoClick(video) }
                                 )
                             }
                         }
@@ -278,10 +278,10 @@ fun ProfileScreen(
                             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            items(history) { content ->
-                                ContentCard(
-                                    content = content,
-                                    onClick = { onContentClick(content) }
+                            items(history) { video ->
+                                VideoCard(
+                                    video = video,
+                                    onClick = { onVideoClick(video) }
                                 )
                             }
                         }

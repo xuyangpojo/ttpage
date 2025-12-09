@@ -1,7 +1,7 @@
 package com.xuyang.ttpage.model.data
 
 /**
- * Model层：内容数据模型
+ * Model层：视频数据模型
  * 
  * 包含字段：
  * - 标题
@@ -13,7 +13,7 @@ package com.xuyang.ttpage.model.data
  * - 视频封面（可选）
  * - 视频文件URL（可选）
  */
-data class Content(
+data class Video(
     val id: String,
     val title: String,
     val author: String,

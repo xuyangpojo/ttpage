@@ -1,7 +1,7 @@
 package com.xuyang.ttpage.model.repository
 
-import com.xuyang.ttpage.model.data.Content
 import com.xuyang.ttpage.model.data.Topic
+import com.xuyang.ttpage.model.data.Video
 import kotlinx.coroutines.delay
 
 /**
@@ -27,12 +27,12 @@ class TopicRepository {
     }
     
     /**
-     * 根据话题ID获取内容列表
+     * 根据话题ID获取视频列表
      */
-    suspend fun getContentsByTopic(topicId: String): List<Content> {
+    suspend fun getVideosByTopic(topicId: String): List<Video> {
         delay(500)
-        // 暂时返回相同的内容，实际应该根据话题筛选
-        return ContentRepository().getRecommendedContents()
+        // 暂时返回相同的视频，实际应该根据话题筛选
+        return VideoRepository().getRecommendedVideos()
     }
 }
 

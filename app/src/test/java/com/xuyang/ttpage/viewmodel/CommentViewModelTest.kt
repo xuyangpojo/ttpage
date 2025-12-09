@@ -19,7 +19,7 @@ class CommentViewModelTest {
         // When & Then
         viewModel.comments.test {
             val comments = awaitItem()
-            assertTrue(contents.isEmpty())
+            assertTrue(comments.isEmpty())
         }
     }
     
@@ -27,10 +27,10 @@ class CommentViewModelTest {
     fun `loadComments should populate comments`() = runTest {
         // Given
         val viewModel = CommentViewModel()
-        val contentId = "content1"
+        val videoId = "video1"
         
         // When
-        viewModel.loadComments(contentId)
+        viewModel.loadComments(videoId)
         
         // Wait for loading
         delay(1000)
@@ -44,14 +44,14 @@ class CommentViewModelTest {
     fun `addComment should add new comment to list`() = runTest {
         // Given
         val viewModel = CommentViewModel()
-        val contentId = "content1"
-        viewModel.loadComments(contentId)
+        val videoId = "video1"
+        viewModel.loadComments(videoId)
         delay(1000)
         
         val initialCount = viewModel.comments.value.size
         
         // When
-        viewModel.addComment(contentId, "New comment")
+        viewModel.addComment(videoId, "New comment")
         delay(500)
         
         // Then
@@ -64,8 +64,8 @@ class CommentViewModelTest {
     fun `likeComment should add comment to liked set`() = runTest {
         // Given
         val viewModel = CommentViewModel()
-        val contentId = "content1"
-        viewModel.loadComments(contentId)
+        val videoId = "video1"
+        viewModel.loadComments(videoId)
         delay(1000)
         
         val commentId = viewModel.comments.value.firstOrNull()?.id ?: "c1"
@@ -82,8 +82,8 @@ class CommentViewModelTest {
     fun `unlikeComment should remove comment from liked set`() = runTest {
         // Given
         val viewModel = CommentViewModel()
-        val contentId = "content1"
-        viewModel.loadComments(contentId)
+        val videoId = "video1"
+        viewModel.loadComments(videoId)
         delay(1000)
         
         val commentId = viewModel.comments.value.firstOrNull()?.id ?: "c1"
@@ -105,8 +105,8 @@ class CommentViewModelTest {
     fun `likeComment should increase like count`() = runTest {
         // Given
         val viewModel = CommentViewModel()
-        val contentId = "content1"
-        viewModel.loadComments(contentId)
+        val videoId = "video1"
+        viewModel.loadComments(videoId)
         delay(1000)
         
         val comment = viewModel.comments.value.firstOrNull()

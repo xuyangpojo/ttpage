@@ -6,7 +6,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.ui.screens.*
 import com.xuyang.ttpage.viewmodel.FavoriteViewModel
 import com.xuyang.ttpage.viewmodel.HomeViewModel
@@ -37,15 +37,15 @@ fun NavGraph(
             HomeScreen(
                 viewModel = homeViewModel,
                 topicViewModel = topicViewModel,
-                onContentClick = { content ->
-                    // 导航到详情页，传递Content ID
-                    navController.navigate("detail/${content.id}") {
+                onVideoClick = { video ->
+                    // 导航到详情页，传递Video ID
+                    navController.navigate("detail/${video.id}") {
                         // 保存状态，避免重复创建
                         launchSingleTop = true
                     }
                 },
                 onRefreshRequest = {
-                    homeViewModel.refreshContents()
+                    homeViewModel.refreshVideos()
                 },
                 scrollToTopTrigger = scrollToTopTrigger
             )
@@ -62,8 +62,8 @@ fun NavGraph(
                 onRegisterClick = {
                     navController.navigate(Screen.Register.route)
                 },
-                onContentClick = { content ->
-                    navController.navigate("detail/${content.id}") {
+                onVideoClick = { video ->
+                    navController.navigate("detail/${video.id}") {
                         launchSingleTop = true
                     }
                 }
@@ -96,15 +96,15 @@ fun NavGraph(
         
         // 详情页
         composable(
-            route = "detail/{${Screen.CONTENT_ID_ARG}}"
+            route = "detail/{${Screen.VIDEO_ID_ARG}}"
         ) { backStackEntry ->
-            // 从参数中获取contentId
-            val contentId = backStackEntry.arguments?.getString(Screen.CONTENT_ID_ARG) ?: ""
+            // 从参数中获取videoId
+            val videoId = backStackEntry.arguments?.getString(Screen.VIDEO_ID_ARG) ?: ""
             
-            // 从HomeViewModel获取对应的Content对象
-            val content = homeViewModel.getContentById(contentId) ?: Content(
-                id = contentId,
-                title = "内容不存在",
+            // 从HomeViewModel获取对应的Video对象
+            val video = homeViewModel.getVideoById(videoId) ?: Video(
+                id = videoId,
+                title = "视频不存在",
                 author = "未知",
                 publishTime = "未知",
                 likeCount = 0,
@@ -113,7 +113,7 @@ fun NavGraph(
             )
             
             DetailScreen(
-                content = content,
+                video = video,
                 onBackClick = {
                     navController.popBackStack()
                 },

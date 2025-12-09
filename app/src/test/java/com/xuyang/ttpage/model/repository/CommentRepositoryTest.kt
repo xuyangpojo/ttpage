@@ -15,7 +15,7 @@ class CommentRepositoryTest {
     @Test
     fun `getComments should return non-empty list`() = runTest {
         // When
-        val comments = repository.getComments("content1")
+        val comments = repository.getComments("video1")
         
         // Then
         assertNotNull(comments)
@@ -25,12 +25,12 @@ class CommentRepositoryTest {
     @Test
     fun `getComments should return comments with valid data`() = runTest {
         // When
-        val comments = repository.getComments("content1")
+        val comments = repository.getComments("video1")
         
         // Then
         comments.forEach { comment ->
             assertNotNull(comment.id)
-            assertNotNull(comment.contentId)
+            assertNotNull(comment.videoId)
             assertNotNull(comment.author)
             assertNotNull(comment.content)
             assertNotNull(comment.publishTime)
@@ -42,7 +42,7 @@ class CommentRepositoryTest {
     @Test
     fun `getComments should return some comments with replies`() = runTest {
         // When
-        val comments = repository.getComments("content1")
+        val comments = repository.getComments("video1")
         
         // Then
         val commentsWithReplies = comments.filter { it.replies.isNotEmpty() }
@@ -52,11 +52,11 @@ class CommentRepositoryTest {
     @Test
     fun `addComment should return new comment`() = runTest {
         // When
-        val newComment = repository.addComment("content1", "New comment")
+        val newComment = repository.addComment("video1", "New comment")
         
         // Then
         assertNotNull(newComment)
-        assertEquals("content1", newComment.contentId)
+        assertEquals("video1", newComment.videoId)
         assertEquals("New comment", newComment.content)
         assertNull(newComment.parentCommentId)
     }
@@ -64,11 +64,11 @@ class CommentRepositoryTest {
     @Test
     fun `addComment with parentCommentId should return reply`() = runTest {
         // When
-        val reply = repository.addComment("content1", "Reply comment", "c1")
+        val reply = repository.addComment("video1", "Reply comment", "c1")
         
         // Then
         assertNotNull(reply)
-        assertEquals("content1", reply.contentId)
+        assertEquals("video1", reply.videoId)
         assertEquals("Reply comment", reply.content)
         assertEquals("c1", reply.parentCommentId)
     }

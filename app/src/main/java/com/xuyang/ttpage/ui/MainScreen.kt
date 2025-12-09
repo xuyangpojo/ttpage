@@ -46,7 +46,7 @@ fun MainScreen(
                         if (currentRoute == Screen.Home.route) {
                             // 如果已在首页，返回顶部并刷新
                             scrollToTopTrigger++
-                            homeViewModel.loadContents()
+                            homeViewModel.loadVideos()
                         } else {
                             navController.navigate(Screen.Home.route) {
                                 popUpTo(Screen.Home.route) { inclusive = false }

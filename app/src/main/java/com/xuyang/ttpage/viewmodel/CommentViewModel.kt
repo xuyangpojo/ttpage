@@ -35,12 +35,12 @@ class CommentViewModel : ViewModel() {
     /**
      * 加载评论列表
      */
-    fun loadComments(contentId: String) {
+    fun loadComments(videoId: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
-                _comments.value = repository.getComments(contentId)
+                _comments.value = repository.getComments(videoId)
             } catch (e: Exception) {
                 _errorMessage.value = "加载评论失败: ${e.message}"
             } finally {
@@ -52,11 +52,11 @@ class CommentViewModel : ViewModel() {
     /**
      * 添加评论
      */
-    fun addComment(contentId: String, content: String, parentCommentId: String? = null) {
+    fun addComment(videoId: String, content: String, parentCommentId: String? = null) {
         viewModelScope.launch {
             try {
                 _errorMessage.value = null
-                val newComment = repository.addComment(contentId, content, parentCommentId)
+                val newComment = repository.addComment(videoId, content, parentCommentId)
                 _comments.value = _comments.value + newComment
             } catch (e: Exception) {
                 _errorMessage.value = "评论失败: ${e.message}"

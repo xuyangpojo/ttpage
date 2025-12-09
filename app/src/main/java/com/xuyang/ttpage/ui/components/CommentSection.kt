@@ -20,7 +20,7 @@ import com.xuyang.ttpage.viewmodel.CommentViewModel
  */
 @Composable
 fun CommentSection(
-    contentId: String,
+    videoId: String,
     viewModel: CommentViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -28,8 +28,8 @@ fun CommentSection(
     val isLoading by viewModel.isLoading.collectAsState()
     val likedCommentIds by viewModel.likedCommentIds.collectAsState()
     
-    LaunchedEffect(contentId) {
-        viewModel.loadComments(contentId)
+    LaunchedEffect(videoId) {
+        viewModel.loadComments(videoId)
     }
     
     Column(
@@ -74,7 +74,7 @@ fun CommentSection(
                             // TODO: 显示回复输入框
                         },
                         onAddReply = { parentCommentId, replyContent ->
-                            viewModel.addComment(comment.contentId, replyContent, parentCommentId)
+                            viewModel.addComment(comment.videoId, replyContent, parentCommentId)
                         }
                     )
                 }
@@ -85,7 +85,7 @@ fun CommentSection(
         CommentInput(
             onSendClick = { content ->
                 if (content.isNotBlank()) {
-                    viewModel.addComment(contentId, content)
+                    viewModel.addComment(videoId, content)
                 }
             }
         )
