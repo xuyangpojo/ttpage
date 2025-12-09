@@ -1,18 +1,27 @@
 package com.xuyang.ttpage.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.ui.components.CommentSection
 import com.xuyang.ttpage.ui.components.VideoPlayer
+import com.xuyang.ttpage.viewmodel.HomeViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 /**
  * View层：内容详情页
@@ -25,8 +34,26 @@ import com.xuyang.ttpage.ui.components.VideoPlayer
 fun DetailScreen(
     content: Content,
     onBackClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
+    val context = LocalContext.current
+    var isLiked by remember { mutableStateOf(false) }
+    var likeCount by remember { mutableIntStateOf(content.likeCount) }
+    
+    // 复制链接到剪贴板
+    fun copyLinkToClipboard() {
+        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+        val link = "https://ttpage.example.com/content/${content.id}"
+        val clip = ClipData.newPlainText("内容链接", link)
+        clipboard.setPrimaryClip(clip)
+    }
+    
+    // 点赞内容
+    fun toggleLike() {
+        isLiked = !isLiked
+        likeCount = if (isLiked) likeCount + 1 else maxOf(0, likeCount - 1)
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -115,29 +142,67 @@ fun DetailScreen(
             
             Divider()
             
-            // 点赞数
-            Text(
-                text = "点赞数",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${content.likeCount}",
-                style = MaterialTheme.typography.bodyLarge
-            )
+            // 操作按钮（点赞、转发）
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 点赞按钮
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { toggleLike() },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "点赞",
+                        tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "$likeCount",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+                
+                // 转发按钮（复制链接）
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { copyLinkToClipboard() },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "转发"
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "转发",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
+            }
             
             Divider()
             
-            // 评论数
-            Text(
-                text = "评论数",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${content.commentCount}",
-                style = MaterialTheme.typography.bodyLarge
-            )
+            // 点赞数和评论数（显示）
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "点赞数: $likeCount",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "评论数: ${content.commentCount}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
             
             Divider()
             
@@ -198,6 +263,11 @@ fun DetailScreen(
                     lineHeight = 20.sp
                 )
             }
+            
+            Divider()
+            
+            // 评论区
+            CommentSection(contentId = content.id)
         }
     }
 }

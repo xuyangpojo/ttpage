@@ -104,7 +104,8 @@ fun NavGraph(
                 content = content,
                 onBackClick = {
                     navController.popBackStack()
-                }
+                },
+                homeViewModel = homeViewModel
             )
         }
     }
