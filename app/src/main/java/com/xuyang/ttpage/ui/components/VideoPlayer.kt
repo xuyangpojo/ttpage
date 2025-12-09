@@ -4,8 +4,7 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,10 +14,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.xuyang.ttpage.util.ResourceHelper
 import kotlinx.coroutines.delay
+import android.media.AudioManager
+import android.content.Context
 
 /**
  * 视频播放器组件
@@ -27,6 +29,8 @@ import kotlinx.coroutines.delay
  * 1. 视频播放和暂停
  * 2. 进度条控制
  * 3. 显示播放状态
+ * 4. 倍速播放（0.5x, 1x, 1.5x, 2x）
+ * 5. 音量控制
  */
 @Composable
 fun VideoPlayer(
@@ -62,6 +66,14 @@ fun VideoPlayer(
     var isPlaying by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
+    var playbackSpeed by remember { mutableStateOf(1f) }
+    var showSpeedMenu by remember { mutableStateOf(false) }
+    var showVolumeControl by remember { mutableStateOf(false) }
+    
+    // 音量控制
+    val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
+    var currentVolume by remember { mutableIntStateOf(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)) }
+    val maxVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) }
     
     // 监听播放状态
     LaunchedEffect(exoPlayer, videoUri) {
@@ -72,6 +84,7 @@ fun VideoPlayer(
             isPlaying = exoPlayer.isPlaying
             currentPosition = exoPlayer.currentPosition
             duration = if (exoPlayer.duration > 0) exoPlayer.duration else 0L
+            playbackSpeed = exoPlayer.playbackParameters.speed
             delay(100) // 每100ms更新一次
         }
     }
@@ -108,7 +121,7 @@ fun VideoPlayer(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 进度条
+            // 进度条和控制按钮
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -153,6 +166,75 @@ fun VideoPlayer(
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.width(50.dp)
                 )
+            }
+            
+            // 倍速和音量控制行
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 倍速播放按钮
+                Box {
+                    IconButton(
+                        onClick = { showSpeedMenu = !showSpeedMenu }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Speed,
+                            contentDescription = "倍速"
+                        )
+                    }
+                    Text(
+                        text = "${playbackSpeed}x",
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.padding(start = 4.dp)
+                    )
+                    
+                    // 倍速菜单
+                    DropdownMenu(
+                        expanded = showSpeedMenu,
+                        onDismissRequest = { showSpeedMenu = false }
+                    ) {
+                        listOf(0.5f, 1f, 1.5f, 2f).forEach { speed ->
+                            DropdownMenuItem(
+                                text = { Text("${speed}x") },
+                                onClick = {
+                                    exoPlayer.playbackParameters = exoPlayer.playbackParameters.withSpeed(speed)
+                                    playbackSpeed = speed
+                                    showSpeedMenu = false
+                                }
+                            )
+                        }
+                    }
+                }
+                
+                // 音量控制按钮
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    IconButton(
+                        onClick = { showVolumeControl = !showVolumeControl }
+                    ) {
+                        Icon(
+                            imageVector = if (currentVolume > 0) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
+                            contentDescription = "音量"
+                        )
+                    }
+                    
+                    // 音量滑块（当显示时）
+                    if (showVolumeControl) {
+                        Slider(
+                            value = currentVolume.toFloat() / maxVolume,
+                            onValueChange = { volume ->
+                                val newVolume = (volume * maxVolume).toInt()
+                                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0)
+                                currentVolume = newVolume
+                            },
+                            modifier = Modifier.width(100.dp)
+                        )
+                    }
+                }
             }
         }
     }

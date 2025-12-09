@@ -5,6 +5,8 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -20,8 +22,10 @@ import androidx.compose.ui.unit.sp
 import com.xuyang.ttpage.model.data.Content
 import com.xuyang.ttpage.ui.components.CommentSection
 import com.xuyang.ttpage.ui.components.VideoPlayer
+import com.xuyang.ttpage.viewmodel.FavoriteViewModel
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlin.math.abs
 
 /**
  * View层：内容详情页
@@ -29,13 +33,91 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * 功能：
  * 1. 显示内容的完整信息（实体字符串信息）
  * 2. 支持滑动返回（通过Navigation的返回功能）
+ * 3. 支持上下滑动切换不同内容
  */
 @Composable
 fun DetailScreen(
     content: Content,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    favoriteViewModel: FavoriteViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
+    val context = LocalContext.current
+    val contents = homeViewModel.contents.collectAsState().value
+    val isFavorite = favoriteViewModel.isFavorite(content.id)
+    
+    // 添加浏览历史
+    LaunchedEffect(content.id) {
+        favoriteViewModel.addHistory(content.id)
+    }
+    
+    // 找到当前内容在列表中的索引
+    val currentIndex = remember(content.id) {
+        contents.indexOfFirst { it.id == content.id }.coerceAtLeast(0)
+    }
+    
+    // 创建垂直Pager状态
+    val pagerState = rememberPagerState(
+        initialPage = currentIndex,
+        pageCount = { contents.size.coerceAtLeast(1) }
+    )
+    
+    // 当内容列表变化时，更新页面数量
+    LaunchedEffect(contents.size) {
+        if (pagerState.pageCount != contents.size) {
+            // 如果当前页面超出范围，跳转到最后一页
+            val targetPage = currentIndex.coerceIn(0, contents.size - 1)
+            if (targetPage != pagerState.currentPage) {
+                pagerState.animateScrollToPage(targetPage)
+            }
+        }
+    }
+    
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { 
+                    Text(
+                        text = "内容详情 (${pagerState.currentPage + 1}/${contents.size})"
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                }
+            )
+        }
+    ) { paddingValues ->
+        // 使用VerticalPager实现上下切换
+        VerticalPager(
+            state = pagerState,
+            modifier = modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            key = { index -> contents.getOrNull(index)?.id ?: index }
+        ) { page ->
+            val currentContent = contents.getOrNull(page) ?: content
+            
+            DetailContentPage(
+                content = currentContent,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    }
+}
+
+/**
+ * 详情页内容页面
+ */
+@Composable
+fun DetailContentPage(
+    content: Content,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var isLiked by remember { mutableStateOf(false) }
@@ -54,29 +136,13 @@ fun DetailScreen(
         isLiked = !isLiked
         likeCount = if (isLiked) likeCount + 1 else maxOf(0, likeCount - 1)
     }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("内容详情") },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "返回"
-                        )
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
+    
+    Column(
+        modifier = modifier
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
             // 标题
             Text(
                 text = "标题",
@@ -142,10 +208,10 @@ fun DetailScreen(
             
             Divider()
             
-            // 操作按钮（点赞、转发）
+            // 操作按钮（点赞、收藏、转发）
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // 点赞按钮
                 Row(
@@ -163,7 +229,27 @@ fun DetailScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "$likeCount",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                
+                // 收藏按钮
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable { favoriteViewModel.toggleFavorite(content.id) },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                        contentDescription = "收藏",
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (isFavorite) "已收藏" else "收藏",
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
                 
@@ -182,7 +268,7 @@ fun DetailScreen(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "转发",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }

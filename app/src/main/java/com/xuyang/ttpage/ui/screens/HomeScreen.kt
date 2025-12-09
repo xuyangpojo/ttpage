@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
@@ -12,19 +13,32 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.lazy.animateScrollToItem
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.pullrefresh.PullRefreshIndicator
+import androidx.compose.material3.pullrefresh.pullRefresh
+import androidx.compose.material3.pullrefresh.rememberPullRefreshState
 import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.model.data.Topic
 import com.xuyang.ttpage.util.ResourceHelper
 import com.xuyang.ttpage.viewmodel.HomeViewModel
+import com.xuyang.ttpage.viewmodel.TopicViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 /**
  * View层：首页双列推荐页面
@@ -34,22 +48,45 @@ import com.xuyang.ttpage.viewmodel.HomeViewModel
  * 2. 从上到下显示内容卡片
  * 3. 显示内容的所有信息（作者、发布时间、点赞数、评论数、是否热门、标题）
  * 4. 点击卡片跳转到详情页
+ * 5. 顶部话题切换（左右滑动）
+ * 6. 下拉刷新和上拉加载更多
  */
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    viewModel: HomeViewModel = viewModel(),
+    topicViewModel: TopicViewModel = viewModel(),
     onContentClick: (Content) -> Unit = {},
-    onRefreshRequest: () -> Unit = { viewModel.loadContents() },
+    onRefreshRequest: () -> Unit = { viewModel.refreshContents() },
     scrollToTopTrigger: Int = 0
 ) {
     // 观察ViewModel的状态
     val contents by viewModel.contents.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val currentTopicId by viewModel.currentTopicId.collectAsState()
+    val hasMore by viewModel.hasMore.collectAsState()
+    
+    val topics by topicViewModel.topics.collectAsState()
+    val selectedTopicId by topicViewModel.selectedTopicId.collectAsState()
     
     // 创建LazyListState用于控制滚动
     val leftListState = rememberLazyListState()
     val rightListState = rememberLazyListState()
+    
+    // 下拉刷新状态
+    val pullRefreshState = rememberPullRefreshState(
+        refreshing = isLoading && contents.isNotEmpty(),
+        onRefresh = { viewModel.refreshContents() }
+    )
+    
+    // 话题切换时刷新内容
+    LaunchedEffect(selectedTopicId) {
+        if (selectedTopicId != currentTopicId) {
+            viewModel.loadContents(selectedTopicId, refresh = true)
+            leftListState.animateScrollToItem(0)
+            rightListState.animateScrollToItem(0)
+        }
+    }
     
     // 返回顶部功能
     LaunchedEffect(scrollToTopTrigger) {
@@ -60,55 +97,197 @@ fun HomeScreen(
         }
     }
     
-    if (isLoading && contents.isEmpty()) {
-        // 加载中显示
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
+    // 检测滚动到底部，加载更多
+    LaunchedEffect(leftListState, rightListState) {
+        val leftLastVisible = leftListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        val rightLastVisible = rightListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+        val leftTotal = leftListState.layoutInfo.totalItemsCount
+        val rightTotal = rightListState.layoutInfo.totalItemsCount
+        
+        if ((leftLastVisible >= leftTotal - 2 || rightLastVisible >= rightTotal - 2) && hasMore && !isLoading) {
+            viewModel.loadMoreContents()
         }
-    } else {
-        // 双列布局
-        Row(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(horizontal = 8.dp)
-        ) {
-            // 左列
-            LazyColumn(
-                state = leftListState,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 0 }) { _, content ->
-                    ContentCard(
-                        content = content,
-                        onClick = { onContentClick(content) }
-                    )
-                }
+    }
+    
+    Column(modifier = modifier.fillMaxSize()) {
+        // 话题切换栏
+        TopicTabs(
+            topics = topics,
+            selectedTopicId = selectedTopicId,
+            onTopicSelected = { topicId ->
+                topicViewModel.selectTopic(topicId)
             }
-            
-            // 右列
-            LazyColumn(
-                state = rightListState,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 8.dp)
+        )
+        
+        if (isLoading && contents.isEmpty()) {
+            // 加载中显示
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 1 }) { _, content ->
-                    ContentCard(
-                        content = content,
-                        onClick = { onContentClick(content) }
-                    )
+                CircularProgressIndicator()
+            }
+        } else {
+            // 双列布局（带下拉刷新）
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullRefresh(pullRefreshState)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp)
+                ) {
+                // 左列
+                LazyColumn(
+                    state = leftListState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(end = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 0 }) { _, content ->
+                        ContentCard(
+                            content = content,
+                            onClick = { onContentClick(content) }
+                        )
+                    }
+                    
+                    // 加载更多指示器
+                    if (isLoading && contents.isNotEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
+                    }
                 }
+                
+                // 右列
+                LazyColumn(
+                    state = rightListState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 1 }) { _, content ->
+                        ContentCard(
+                            content = content,
+                            onClick = { onContentClick(content) }
+                        )
+                    }
+                    
+                    // 加载更多指示器
+                    if (isLoading && contents.isNotEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
+                    }
+                }
+                
+                // 下拉刷新指示器
+                PullRefreshIndicator(
+                    refreshing = isLoading && contents.isNotEmpty(),
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
             }
         }
+    }
+}
+
+/**
+ * 话题切换标签栏
+ */
+@Composable
+fun TopicTabs(
+    topics: List<Topic>,
+    selectedTopicId: String,
+    onTopicSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val selectedIndex = topics.indexOfFirst { it.id == selectedTopicId }.takeIf { it >= 0 } ?: 0
+    val topicsListState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
+    
+    // 当选中话题变化时，滚动到对应位置
+    LaunchedEffect(selectedTopicId) {
+        val index = topics.indexOfFirst { it.id == selectedTopicId }
+        if (index >= 0) {
+            topicsListState.animateScrollToItem(index)
+        }
+    }
+    
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 2.dp
+    ) {
+        LazyRow(
+            state = topicsListState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            itemsIndexed(topics) { _, topic ->
+                TopicTabItem(
+                    topic = topic,
+                    isSelected = topic.id == selectedTopicId,
+                    onClick = { onTopicSelected(topic.id) }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * 话题标签项
+ */
+@Composable
+fun TopicTabItem(
+    topic: Topic,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        color = if (isSelected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant
+        }
+    ) {
+        Text(
+            text = topic.name,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (isSelected) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
     }
 }
 
@@ -133,7 +312,7 @@ fun ContentCard(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 视频封面（如果有）
+            // 视频封面（如果有）- 自适应布局
             if (content.hasVideo && !content.videoCover.isNullOrBlank()) {
                 val context = LocalContext.current
                 val coverResourceId = try {
@@ -147,14 +326,45 @@ fun ContentCard(
                 }
                 
                 if (coverResourceId != 0) {
-                    Image(
-                        painter = painterResource(id = coverResourceId),
-                        contentDescription = "视频封面",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp),
-                        contentScale = ContentScale.Crop
-                    )
+                    // 自适应封面布局：根据图片比例计算高度
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val maxWidth = maxWidth
+                        val density = LocalDensity.current
+                        
+                        // 获取图片尺寸并计算高度
+                        val imageHeight = remember(coverResourceId, maxWidth) {
+                            try {
+                                val drawable = context.resources.getDrawable(coverResourceId, null)
+                                val width = drawable.intrinsicWidth
+                                val height = drawable.intrinsicHeight
+                                if (width > 0 && height > 0) {
+                                    // 计算宽高比
+                                    val aspectRatio = height.toFloat() / width.toFloat()
+                                    // 根据最大宽度和宽高比计算高度
+                                    val calculatedHeight = maxWidth * aspectRatio
+                                    // 限制高度范围：最小100dp，最大300dp
+                                    calculatedHeight.coerceIn(100.dp, 300.dp)
+                                } else {
+                                    // 默认比例 16:9
+                                    maxWidth * 9f / 16f
+                                }
+                            } catch (e: Exception) {
+                                // 默认比例 16:9
+                                maxWidth * 9f / 16f
+                            }
+                        }
+                        
+                        Image(
+                            painter = painterResource(id = coverResourceId),
+                            contentDescription = "视频封面",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(imageHeight),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
                     Spacer(modifier = Modifier.height(4.dp))
                 }
             }

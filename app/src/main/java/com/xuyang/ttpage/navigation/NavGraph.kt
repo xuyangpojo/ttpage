@@ -8,7 +8,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.xuyang.ttpage.model.data.Content
 import com.xuyang.ttpage.ui.screens.*
+import com.xuyang.ttpage.viewmodel.FavoriteViewModel
 import com.xuyang.ttpage.viewmodel.HomeViewModel
+import com.xuyang.ttpage.viewmodel.TopicViewModel
 
 /**
  * 导航图配置
@@ -22,6 +24,8 @@ fun NavGraph(
 ) {
     // 共享ViewModel实例
     val homeViewModel: HomeViewModel = viewModel()
+    val topicViewModel: TopicViewModel = viewModel()
+    val favoriteViewModel: FavoriteViewModel = viewModel()
     
     NavHost(
         navController = navController,
@@ -32,6 +36,7 @@ fun NavGraph(
         composable(Screen.Home.route) {
             HomeScreen(
                 viewModel = homeViewModel,
+                topicViewModel = topicViewModel,
                 onContentClick = { content ->
                     // 导航到详情页，传递Content ID
                     navController.navigate("detail/${content.id}") {
@@ -40,7 +45,7 @@ fun NavGraph(
                     }
                 },
                 onRefreshRequest = {
-                    homeViewModel.loadContents()
+                    homeViewModel.refreshContents()
                 },
                 scrollToTopTrigger = scrollToTopTrigger
             )
@@ -49,11 +54,18 @@ fun NavGraph(
         // 我的页面
         composable(Screen.Profile.route) {
             ProfileScreen(
+                homeViewModel = homeViewModel,
+                favoriteViewModel = favoriteViewModel,
                 onLoginClick = {
                     navController.navigate(Screen.Login.route)
                 },
                 onRegisterClick = {
                     navController.navigate(Screen.Register.route)
+                },
+                onContentClick = { content ->
+                    navController.navigate("detail/${content.id}") {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -105,7 +117,8 @@ fun NavGraph(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                homeViewModel = homeViewModel
+                homeViewModel = homeViewModel,
+                favoriteViewModel = favoriteViewModel
             )
         }
     }

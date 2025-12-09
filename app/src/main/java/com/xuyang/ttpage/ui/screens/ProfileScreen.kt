@@ -1,16 +1,24 @@
 package com.xuyang.ttpage.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.ui.screens.HomeScreen.ContentCard
+import com.xuyang.ttpage.viewmodel.FavoriteViewModel
+import com.xuyang.ttpage.viewmodel.HomeViewModel
 import com.xuyang.ttpage.viewmodel.UserViewModel
 
 /**
@@ -25,11 +33,24 @@ import com.xuyang.ttpage.viewmodel.UserViewModel
 fun ProfileScreen(
     modifier: Modifier = Modifier,
     userViewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    favoriteViewModel: FavoriteViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onLoginClick: () -> Unit = {},
-    onRegisterClick: () -> Unit = {}
+    onRegisterClick: () -> Unit = {},
+    onContentClick: (Content) -> Unit = {}
 ) {
     val currentUser by userViewModel.currentUser.collectAsState()
     val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
+    
+    val contents = homeViewModel.contents.collectAsState().value
+    val favorites by favoriteViewModel.favorites.collectAsState()
+    val history by favoriteViewModel.history.collectAsState()
+    
+    // 更新收藏和历史记录列表
+    LaunchedEffect(contents) {
+        favoriteViewModel.updateFavoritesFromContents(contents)
+        favoriteViewModel.updateHistoryFromContents(contents)
+    }
     
     Column(
         modifier = modifier
@@ -148,6 +169,121 @@ fun ProfileScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("注册")
+                        }
+                    }
+                }
+            }
+        }
+        
+        // 收藏和历史记录
+        if (isLoggedIn) {
+            // 我的收藏
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    ListItem(
+                        headlineContent = { 
+                            Text(
+                                "我的收藏 (${favorites.size})",
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        leadingContent = {
+                            Icon(
+                                imageVector = Icons.Default.Bookmark,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    )
+                    Divider()
+                    if (favorites.isEmpty()) {
+                        ListItem(
+                            headlineContent = { 
+                                Text(
+                                    "暂无收藏",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.height((favorites.size * 120).coerceAtMost(400).dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(favorites) { content ->
+                                ContentCard(
+                                    content = content,
+                                    onClick = { onContentClick(content) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // 浏览历史
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ListItem(
+                            headlineContent = { 
+                                Text(
+                                    "浏览历史 (${history.size})",
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            leadingContent = {
+                                Icon(
+                                    imageVector = Icons.Default.History,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                        if (history.isNotEmpty()) {
+                            TextButton(
+                                onClick = { favoriteViewModel.clearHistory() }
+                            ) {
+                                Text("清空", style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                    Divider()
+                    if (history.isEmpty()) {
+                        ListItem(
+                            headlineContent = { 
+                                Text(
+                                    "暂无浏览历史",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.height((history.size * 120).coerceAtMost(400).dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(history) { content ->
+                                ContentCard(
+                                    content = content,
+                                    onClick = { onContentClick(content) }
+                                )
+                            }
                         }
                     }
                 }
