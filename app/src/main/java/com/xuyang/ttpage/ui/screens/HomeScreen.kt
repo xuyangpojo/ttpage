@@ -24,11 +24,13 @@ import com.xuyang.ttpage.viewmodel.HomeViewModel
  * 1. 屏幕分成左右两部分
  * 2. 从上到下显示内容卡片
  * 3. 显示内容的所有信息（作者、发布时间、点赞数、评论数、是否热门、标题）
+ * 4. 点击卡片跳转到详情页
  */
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
+    onContentClick: (Content) -> Unit = {}
 ) {
     // 观察ViewModel的状态
     val contents by viewModel.contents.collectAsState()
@@ -58,7 +60,10 @@ fun HomeScreen(
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 0 }) { _, content ->
-                    ContentCard(content = content)
+                    ContentCard(
+                        content = content,
+                        onClick = { onContentClick(content) }
+                    )
                 }
             }
             
@@ -71,7 +76,10 @@ fun HomeScreen(
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 itemsIndexed(contents.filterIndexed { index, _ -> index % 2 == 1 }) { _, content ->
-                    ContentCard(content = content)
+                    ContentCard(
+                        content = content,
+                        onClick = { onContentClick(content) }
+                    )
                 }
             }
         }
@@ -84,12 +92,13 @@ fun HomeScreen(
 @Composable
 fun ContentCard(
     content: Content,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable { /* TODO: 点击跳转到详情页 */ },
+            .clickable(onClick = onClick),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(

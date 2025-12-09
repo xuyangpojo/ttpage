@@ -5,10 +5,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import com.xuyang.ttpage.ui.screens.HomeScreen
+import androidx.navigation.compose.rememberNavController
+import com.xuyang.ttpage.navigation.NavGraph
 import com.xuyang.ttpage.ui.theme.TTPageTheme
 
 /**
@@ -16,8 +15,8 @@ import com.xuyang.ttpage.ui.theme.TTPageTheme
  * 
  * MVVM架构中，Activity只负责：
  * 1. 设置UI主题
- * 2. 加载主界面（Screen）
- * 3. 不包含业务逻辑
+ * 2. 初始化Navigation
+ * 3. 加载导航图
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -25,13 +24,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             TTPageTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    // 使用MVVM架构的HomeScreen
-                    // ViewModel会在HomeScreen内部自动创建
-                    HomeScreen(
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                // 创建NavController
+                val navController = rememberNavController()
+                
+                // 设置导航图
+                NavGraph(
+                    navController = navController,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

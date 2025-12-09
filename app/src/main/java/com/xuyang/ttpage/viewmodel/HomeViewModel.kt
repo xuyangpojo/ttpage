@@ -39,6 +39,13 @@ class HomeViewModel : ViewModel() {
     }
     
     /**
+     * 根据ID获取内容
+     */
+    fun getContentById(id: String): Content? {
+        return _contents.value.find { it.id == id }
+    }
+    
+    /**
      * 加载内容列表
      */
     fun loadContents() {
