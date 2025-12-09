@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.xuyang.ttpage.navigation.NavGraph
+import com.xuyang.ttpage.ui.MainScreen
 import com.xuyang.ttpage.ui.theme.TTPageTheme
 
 /**
@@ -27,8 +27,8 @@ class MainActivity : ComponentActivity() {
                 // 创建NavController
                 val navController = rememberNavController()
                 
-                // 设置导航图
-                NavGraph(
+                // 设置主屏幕（包含底部导航栏）
+                MainScreen(
                     navController = navController,
                     modifier = Modifier.fillMaxSize()
                 )

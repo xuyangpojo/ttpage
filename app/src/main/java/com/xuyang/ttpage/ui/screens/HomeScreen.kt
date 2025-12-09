@@ -4,11 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.lazy.animateScrollToItem
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -35,11 +39,26 @@ import com.xuyang.ttpage.viewmodel.HomeViewModel
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    onContentClick: (Content) -> Unit = {}
+    onContentClick: (Content) -> Unit = {},
+    onRefreshRequest: () -> Unit = { viewModel.loadContents() },
+    scrollToTopTrigger: Int = 0
 ) {
     // 观察ViewModel的状态
     val contents by viewModel.contents.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    
+    // 创建LazyListState用于控制滚动
+    val leftListState = rememberLazyListState()
+    val rightListState = rememberLazyListState()
+    
+    // 返回顶部功能
+    LaunchedEffect(scrollToTopTrigger) {
+        if (scrollToTopTrigger > 0) {
+            leftListState.animateScrollToItem(0)
+            rightListState.animateScrollToItem(0)
+            onRefreshRequest()
+        }
+    }
     
     if (isLoading && contents.isEmpty()) {
         // 加载中显示
@@ -58,6 +77,7 @@ fun HomeScreen(
         ) {
             // 左列
             LazyColumn(
+                state = leftListState,
                 modifier = Modifier
                     .weight(1f)
                     .padding(end = 4.dp),
@@ -74,6 +94,7 @@ fun HomeScreen(
             
             // 右列
             LazyColumn(
+                state = rightListState,
                 modifier = Modifier
                     .weight(1f)
                     .padding(start = 4.dp),

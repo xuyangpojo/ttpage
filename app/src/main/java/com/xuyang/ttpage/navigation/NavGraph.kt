@@ -1,16 +1,13 @@
 package com.xuyang.ttpage.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.xuyang.ttpage.model.data.Content
-import com.xuyang.ttpage.ui.screens.DetailScreen
-import com.xuyang.ttpage.ui.screens.HomeScreen
+import com.xuyang.ttpage.ui.screens.*
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 
 /**
@@ -20,7 +17,8 @@ import com.xuyang.ttpage.viewmodel.HomeViewModel
 fun NavGraph(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    startDestination: String = Screen.Home.route
+    startDestination: String = Screen.Home.route,
+    scrollToTopTrigger: Int = 0
 ) {
     // 共享ViewModel实例
     val homeViewModel: HomeViewModel = viewModel()
@@ -40,6 +38,46 @@ fun NavGraph(
                         // 保存状态，避免重复创建
                         launchSingleTop = true
                     }
+                },
+                onRefreshRequest = {
+                    homeViewModel.loadContents()
+                },
+                scrollToTopTrigger = scrollToTopTrigger
+            )
+        }
+        
+        // 我的页面
+        composable(Screen.Profile.route) {
+            ProfileScreen(
+                onLoginClick = {
+                    navController.navigate(Screen.Login.route)
+                },
+                onRegisterClick = {
+                    navController.navigate(Screen.Register.route)
+                }
+            )
+        }
+        
+        // 登录页面
+        composable(Screen.Login.route) {
+            LoginScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onLoginSuccess = {
+                    navController.popBackStack()
+                }
+            )
+        }
+        
+        // 注册页面
+        composable(Screen.Register.route) {
+            RegisterScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onRegisterSuccess = {
+                    navController.popBackStack()
                 }
             )
         }

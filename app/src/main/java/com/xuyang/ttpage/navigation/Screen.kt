@@ -7,6 +7,9 @@ import com.xuyang.ttpage.model.data.Content
  */
 sealed class Screen(val route: String) {
     object Home : Screen("home")
+    object Profile : Screen("profile")
+    object Login : Screen("login")
+    object Register : Screen("register")
     data class Detail(val content: Content) : Screen("detail/{contentId}") {
         fun createRoute(contentId: String) = "detail/$contentId"
     }
