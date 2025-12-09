@@ -25,7 +25,9 @@ class ContentRepository {
                 publishTime = "2小时前",
                 likeCount = 128,
                 commentCount = 45,
-                isHot = true
+                isHot = true,
+                videoCover = "cover1",  // 对应 res/drawable/cover1.png
+                videoUrl = "video1"     // 对应 res/raw/video1.mp4
             ),
             Content(
                 id = "2",
@@ -34,7 +36,9 @@ class ContentRepository {
                 publishTime = "5小时前",
                 likeCount = 256,
                 commentCount = 89,
-                isHot = true
+                isHot = true,
+                videoCover = "cover2",  // 对应 res/drawable/cover2.png
+                videoUrl = "video2"      // 对应 res/raw/video2.mp4
             ),
             Content(
                 id = "3",
@@ -61,7 +65,9 @@ class ContentRepository {
                 publishTime = "3小时前",
                 likeCount = 312,
                 commentCount = 67,
-                isHot = true
+                isHot = true,
+                videoCover = "cover5",  // 对应 res/drawable/cover5.png
+                videoUrl = "video5"      // 对应 res/raw/video5.mp4
             ),
             Content(
                 id = "6",
@@ -79,7 +85,9 @@ class ContentRepository {
                 publishTime = "4小时前",
                 likeCount = 201,
                 commentCount = 56,
-                isHot = true
+                isHot = true,
+                videoCover = "cover7",  // 对应 res/drawable/cover7.png
+                videoUrl = "video7"      // 对应 res/raw/video7.mp4
             ),
             Content(
                 id = "8",

@@ -11,10 +11,15 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.Image
 import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.util.ResourceHelper
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 
 /**
@@ -107,6 +112,32 @@ fun ContentCard(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // 视频封面（如果有）
+            if (content.hasVideo && !content.videoCover.isNullOrBlank()) {
+                val context = LocalContext.current
+                val coverResourceId = try {
+                    context.resources.getIdentifier(
+                        content.videoCover,
+                        "drawable",
+                        context.packageName
+                    )
+                } catch (e: Exception) {
+                    0
+                }
+                
+                if (coverResourceId != 0) {
+                    Image(
+                        painter = painterResource(id = coverResourceId),
+                        contentDescription = "视频封面",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
+            }
+            
             // 标题
             Text(
                 text = content.title,

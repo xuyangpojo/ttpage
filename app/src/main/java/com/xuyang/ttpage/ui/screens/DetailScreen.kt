@@ -12,6 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.ui.components.VideoPlayer
 
 /**
  * View层：内容详情页
@@ -60,6 +61,18 @@ fun DetailScreen(
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold
             )
+            
+            // 视频播放器（如果有视频）
+            if (content.hasVideo && !content.videoUrl.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                VideoPlayer(
+                    videoUrl = content.videoUrl!!,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                )
+                Divider()
+            }
             
             Divider()
             
@@ -175,7 +188,9 @@ fun DetailScreen(
                             publishTime = "${content.publishTime}",
                             likeCount = ${content.likeCount},
                             commentCount = ${content.commentCount},
-                            isHot = ${content.isHot}
+                            isHot = ${content.isHot},
+                            videoCover = ${content.videoCover?.let { "\"$it\"" } ?: "null"},
+                            videoUrl = ${content.videoUrl?.let { "\"$it\"" } ?: "null"}
                         )
                     """.trimIndent(),
                     modifier = Modifier.padding(16.dp),
