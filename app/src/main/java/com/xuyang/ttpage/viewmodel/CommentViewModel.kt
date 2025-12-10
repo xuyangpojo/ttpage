@@ -82,7 +82,7 @@ class CommentViewModel : ViewModel() {
                 // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
                     if (comment.id.toString() == commentId) {
-                        comment.copy(likeCount = comment.likeCount + 1)
+                        comment.copy(likeCount = comment.likeCount + 1u)
                     } else {
                         comment
                     }
@@ -104,7 +104,7 @@ class CommentViewModel : ViewModel() {
                 // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
                     if (comment.id.toString() == commentId) {
-                        comment.copy(likeCount = maxOf(0, comment.likeCount - 1))
+                        comment.copy(likeCount = (comment.likeCount - 1u).coerceAtLeast(0u))
                     } else {
                         comment
                     }

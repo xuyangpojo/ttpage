@@ -1,25 +1,20 @@
 package com.xuyang.ttpage.model.data
 
 /**
- * Model层：视频数据模型
- * 
- * 包含字段：
- * - 标题
- * - 作者
- * - 发布时间
- * - 点赞数
- * - 评论数
- * - 是否是热门内容
- * - 视频封面（可选）
- * - 视频文件URL（可选）
+ * Video 视频
+ * @brief 视频内容Entity
+ * @author xuyang
+ * @date 2025-12-10
  */
 data class Video(
     val id: String,
     val title: String,
-    val author: String,
+    // foreign key: User.kt
+    val authorId: String,
+    val authorName: String,
     val publishTime: String,
-    val likeCount: Int,
-    val commentCount: Int,
+    val likeCount: UInt,
+    val commentCount: UInt,
     val isHot: Boolean,
     val videoCover: String? = null,  // 视频封面URL
     val videoUrl: String? = null     // 视频文件URL

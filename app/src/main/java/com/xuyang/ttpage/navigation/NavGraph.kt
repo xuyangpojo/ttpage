@@ -107,8 +107,8 @@ fun NavGraph(
                 title = "视频不存在",
                 author = "未知",
                 publishTime = "未知",
-                likeCount = 0,
-                commentCount = 0,
+                likeCount = 0u,
+                commentCount = 0u,
                 isHot = false
             )
             

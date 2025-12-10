@@ -24,8 +24,8 @@ class CommentRepository {
                 authorName = "用户A",
                 content = "这个内容很不错，学到了很多！",
                 publishTime = "1小时前",
-                likeCount = 15,
-                replyCount = 2,
+                likeCount = 15u,
+                replyCount = 2u,
                 parentCommentId = null
             ),
             // 评论1的回复1
@@ -36,8 +36,8 @@ class CommentRepository {
                 authorName = "用户B",
                 content = "同感！",
                 publishTime = "30分钟前",
-                likeCount = 3,
-                replyCount = 0,
+                likeCount = 3u,
+                replyCount = 0u,
                 parentCommentId = "1"
             ),
             // 评论1的回复2
@@ -48,8 +48,8 @@ class CommentRepository {
                 authorName = "用户C",
                 content = "确实很有帮助",
                 publishTime = "20分钟前",
-                likeCount = 1,
-                replyCount = 0,
+                likeCount = 1u,
+                replyCount = 0u,
                 parentCommentId = "1"
             ),
             // 顶级评论2
@@ -60,8 +60,8 @@ class CommentRepository {
                 authorName = "用户D",
                 content = "希望能有更多这样的内容",
                 publishTime = "2小时前",
-                likeCount = 8,
-                replyCount = 1,
+                likeCount = 8u,
+                replyCount = 1u,
                 parentCommentId = null
             ),
             // 评论2的回复1
@@ -72,8 +72,8 @@ class CommentRepository {
                 authorName = "用户E",
                 content = "支持！",
                 publishTime = "1小时前",
-                likeCount = 2,
-                replyCount = 0,
+                likeCount = 2u,
+                replyCount = 0u,
                 parentCommentId = "4"
             ),
             // 顶级评论3
@@ -84,8 +84,8 @@ class CommentRepository {
                 authorName = "用户F",
                 content = "感谢分享",
                 publishTime = "3小时前",
-                likeCount = 5,
-                replyCount = 0,
+                likeCount = 5u,
+                replyCount = 0u,
                 parentCommentId = null
             )
         )
@@ -103,8 +103,8 @@ class CommentRepository {
             authorName = "当前用户",
             content = content,
             publishTime = "刚刚",
-            likeCount = 0,
-            replyCount = 0,
+            likeCount = 0u,
+            replyCount = 0u,
             parentCommentId = parentCommentId
         )
     }

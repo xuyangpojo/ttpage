@@ -121,7 +121,7 @@ fun DetailVideoPage(
 ) {
     val context = LocalContext.current
     var isLiked by remember { mutableStateOf(false) }
-    var likeCount by remember { mutableIntStateOf(video.likeCount) }
+    var likeCount by remember { mutableStateOf(video.likeCount) }
     
     // 复制链接到剪贴板
     fun copyLinkToClipboard() {
@@ -134,7 +134,7 @@ fun DetailVideoPage(
     // 点赞内容
     fun toggleLike() {
         isLiked = !isLiked
-        likeCount = if (isLiked) likeCount + 1 else maxOf(0, likeCount - 1)
+        likeCount = if (isLiked) likeCount + 1u else (likeCount - 1u).coerceAtLeast(0u)
     }
     
     Column(

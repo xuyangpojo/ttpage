@@ -28,8 +28,8 @@ class HomeScreenTest {
             title = "Test Title",
             author = "Test Author",
             publishTime = "1小时前",
-            likeCount = 100,
-            commentCount = 50,
+            likeCount = 100u,
+            commentCount = 50u,
             isHot = true
         )
         

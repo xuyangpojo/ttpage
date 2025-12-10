@@ -120,7 +120,7 @@ class CommentViewModelTest {
         // Then
         val updatedComment = viewModel.comments.value.find { it.id == comment.id }
         assertNotNull(updatedComment)
-        assertEquals(initialLikeCount + 1, updatedComment!!.likeCount)
+        assertEquals(initialLikeCount + 1u, updatedComment!!.likeCount)
     }
     
     @Test

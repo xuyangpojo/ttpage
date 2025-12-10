@@ -16,8 +16,8 @@ class VideoTest {
             title = "Test",
             author = "Author",
             publishTime = "1小时前",
-            likeCount = 10,
-            commentCount = 5,
+            likeCount = 10u,
+            commentCount = 5u,
             isHot = false,
             videoUrl = "video1"
         )
@@ -34,8 +34,8 @@ class VideoTest {
             title = "Test",
             author = "Author",
             publishTime = "1小时前",
-            likeCount = 10,
-            commentCount = 5,
+            likeCount = 10u,
+            commentCount = 5u,
             isHot = false,
             videoUrl = null
         )
@@ -52,8 +52,8 @@ class VideoTest {
             title = "Test",
             author = "Author",
             publishTime = "1小时前",
-            likeCount = 10,
-            commentCount = 5,
+            likeCount = 10u,
+            commentCount = 5u,
             isHot = false,
             videoUrl = ""
         )
@@ -70,8 +70,8 @@ class VideoTest {
             title = "Test Title",
             author = "Test Author",
             publishTime = "2小时前",
-            likeCount = 100,
-            commentCount = 50,
+            likeCount = 100u,
+            commentCount = 50u,
             isHot = true,
             videoCover = "cover1",
             videoUrl = "video1"
@@ -82,8 +82,8 @@ class VideoTest {
         assertEquals("Test Title", video.title)
         assertEquals("Test Author", video.author)
         assertEquals("2小时前", video.publishTime)
-        assertEquals(100, video.likeCount)
-        assertEquals(50, video.commentCount)
+        assertEquals(100u, video.likeCount)
+        assertEquals(50u, video.commentCount)
         assertTrue(video.isHot)
         assertEquals("cover1", video.videoCover)
         assertEquals("video1", video.videoUrl)
@@ -97,8 +97,8 @@ class VideoTest {
             title = "Test",
             author = "Author",
             publishTime = "1小时前",
-            likeCount = 10,
-            commentCount = 5,
+            likeCount = 10u,
+            commentCount = 5u,
             isHot = false
         )
         
@@ -107,8 +107,8 @@ class VideoTest {
             title = "Test",
             author = "Author",
             publishTime = "1小时前",
-            likeCount = 10,
-            commentCount = 5,
+            likeCount = 10u,
+            commentCount = 5u,
             isHot = false
         )
         

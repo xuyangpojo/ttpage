@@ -18,8 +18,8 @@ class CommentTest {
             authorName = "Test Author",
             content = "Test comment",
             publishTime = "1小时前",
-            likeCount = 10,
-            replyCount = 2
+            likeCount = 10u,
+            replyCount = 2u
         )
         
         // Then
@@ -29,8 +29,8 @@ class CommentTest {
         assertEquals("Test Author", comment.authorName)
         assertEquals("Test comment", comment.content)
         assertEquals("1小时前", comment.publishTime)
-        assertEquals(10, comment.likeCount)
-        assertEquals(2, comment.replyCount)
+        assertEquals(10u, comment.likeCount)
+        assertEquals(2u, comment.replyCount)
         assertNull(comment.parentCommentId)
     }
     
@@ -44,8 +44,8 @@ class CommentTest {
             authorName = "Reply Author",
             content = "Reply content",
             publishTime = "30分钟前",
-            likeCount = 5,
-            replyCount = 0,
+            likeCount = 5u,
+            replyCount = 0u,
             parentCommentId = "1"
         )
         
@@ -63,8 +63,8 @@ class CommentTest {
             authorName = "Parent Author",
             content = "Parent comment",
             publishTime = "1小时前",
-            likeCount = 10,
-            replyCount = 2,
+            likeCount = 10u,
+            replyCount = 2u,
             parentCommentId = null
         )
         
@@ -75,8 +75,8 @@ class CommentTest {
             authorName = "Reply1",
             content = "Reply 1",
             publishTime = "30分钟前",
-            likeCount = 3,
-            replyCount = 0,
+            likeCount = 3u,
+            replyCount = 0u,
             parentCommentId = "1"
         )
         
@@ -87,8 +87,8 @@ class CommentTest {
             authorName = "Reply2",
             content = "Reply 2",
             publishTime = "20分钟前",
-            likeCount = 1,
-            replyCount = 0,
+            likeCount = 1u,
+            replyCount = 0u,
             parentCommentId = "1"
         )
         
