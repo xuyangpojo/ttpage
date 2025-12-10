@@ -8,7 +8,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.ui.screens.*
-import com.xuyang.ttpage.viewmodel.FavoriteViewModel
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import com.xuyang.ttpage.viewmodel.TopicViewModel
 
@@ -25,7 +24,6 @@ fun NavGraph(
     // 共享ViewModel实例
     val homeViewModel: HomeViewModel = viewModel()
     val topicViewModel: TopicViewModel = viewModel()
-    val favoriteViewModel: FavoriteViewModel = viewModel()
     
     NavHost(
         navController = navController,
@@ -55,7 +53,6 @@ fun NavGraph(
         composable(Screen.Profile.route) {
             ProfileScreen(
                 homeViewModel = homeViewModel,
-                favoriteViewModel = favoriteViewModel,
                 onLoginClick = {
                     navController.navigate(Screen.Login.route)
                 },
@@ -117,8 +114,7 @@ fun NavGraph(
                 onBackClick = {
                     navController.popBackStack()
                 },
-                homeViewModel = homeViewModel,
-                favoriteViewModel = favoriteViewModel
+                homeViewModel = homeViewModel
             )
         }
     }

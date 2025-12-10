@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.ui.screens.HomeScreen.VideoCard
-import com.xuyang.ttpage.viewmodel.FavoriteViewModel
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import com.xuyang.ttpage.viewmodel.UserViewModel
 
@@ -34,23 +33,12 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     userViewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    favoriteViewModel: FavoriteViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     onLoginClick: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
     onVideoClick: (Video) -> Unit = {}
 ) {
     val currentUser by userViewModel.currentUser.collectAsState()
     val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
-    
-    val videos = homeViewModel.videos.collectAsState().value
-    val favorites by favoriteViewModel.favorites.collectAsState()
-    val history by favoriteViewModel.history.collectAsState()
-    
-    // 更新收藏和历史记录列表
-    LaunchedEffect(videos) {
-        favoriteViewModel.updateFavoritesFromVideos(videos)
-        favoriteViewModel.updateHistoryFromVideos(videos)
-    }
     
     Column(
         modifier = modifier
@@ -169,121 +157,6 @@ fun ProfileScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("注册")
-                        }
-                    }
-                }
-            }
-        }
-        
-        // 收藏和历史记录
-        if (isLoggedIn) {
-            // 我的收藏
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    ListItem(
-                        headlineContent = { 
-                            Text(
-                                "我的收藏 (${favorites.size})",
-                                fontWeight = FontWeight.Bold
-                            )
-                        },
-                        leadingContent = {
-                            Icon(
-                                imageVector = Icons.Default.Bookmark,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    )
-                    Divider()
-                    if (favorites.isEmpty()) {
-                        ListItem(
-                            headlineContent = { 
-                                Text(
-                                    "暂无收藏",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        )
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.height((favorites.size * 120).coerceAtMost(400).dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(favorites) { video ->
-                                VideoCard(
-                                    video = video,
-                                    onClick = { onVideoClick(video) }
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // 浏览历史
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ListItem(
-                            headlineContent = { 
-                                Text(
-                                    "浏览历史 (${history.size})",
-                                    fontWeight = FontWeight.Bold
-                                )
-                            },
-                            leadingContent = {
-                                Icon(
-                                    imageVector = Icons.Default.History,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        if (history.isNotEmpty()) {
-                            TextButton(
-                                onClick = { favoriteViewModel.clearHistory() }
-                            ) {
-                                Text("清空", style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-                    }
-                    Divider()
-                    if (history.isEmpty()) {
-                        ListItem(
-                            headlineContent = { 
-                                Text(
-                                    "暂无浏览历史",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        )
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.height((history.size * 120).coerceAtMost(400).dp),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(history) { video ->
-                                VideoCard(
-                                    video = video,
-                                    onClick = { onVideoClick(video) }
-                                )
-                            }
                         }
                     }
                 }

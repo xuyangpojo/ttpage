@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.ui.components.CommentSection
 import com.xuyang.ttpage.ui.components.VideoPlayer
-import com.xuyang.ttpage.viewmodel.FavoriteViewModel
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
@@ -40,17 +39,10 @@ fun DetailScreen(
     video: Video,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
-    favoriteViewModel: FavoriteViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     val context = LocalContext.current
     val videos = homeViewModel.videos.collectAsState().value
-    val isFavorite = favoriteViewModel.isFavorite(video.id)
-    
-    // 添加浏览历史
-    LaunchedEffect(video.id) {
-        favoriteViewModel.addHistory(video.id)
-    }
     
     // 找到当前视频在列表中的索引
     val currentIndex = remember(video.id) {
@@ -208,7 +200,7 @@ fun DetailVideoPage(
             
             Divider()
             
-            // 操作按钮（点赞、收藏、转发）
+            // 操作按钮（点赞、转发）
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -229,26 +221,6 @@ fun DetailVideoPage(
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = "$likeCount",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-                
-                // 收藏按钮
-                Row(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { favoriteViewModel.toggleFavorite(video.id) },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
-                        contentDescription = "收藏",
-                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = if (isFavorite) "已收藏" else "收藏",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -309,7 +281,7 @@ fun DetailVideoPage(
                     text = if (video.isHot) "是" else "否",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (content.isHot) 
+                    color = if (video.isHot) 
                         MaterialTheme.colorScheme.onErrorContainer 
                     else 
                         MaterialTheme.colorScheme.onSurfaceVariant

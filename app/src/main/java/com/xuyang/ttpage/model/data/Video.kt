@@ -16,12 +16,11 @@ data class Video(
     val likeCount: UInt,
     val commentCount: UInt,
     val isHot: Boolean,
-    val videoCover: String? = null,  // 视频封面URL
-    val videoUrl: String? = null     // 视频文件URL
+    // 视频封面资源
+    val videoCover: String? = null,
+    // 视频文件资源
+    val videoUrl: String? = null
 ) {
-    /**
-     * 判断是否有视频
-     */
     val hasVideo: Boolean
         get() = !videoUrl.isNullOrBlank()
 }

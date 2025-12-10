@@ -4,22 +4,19 @@ import com.xuyang.ttpage.model.data.Comment
 import kotlinx.coroutines.delay
 
 /**
- * Model层：评论数据仓库
+ * CommentRepository 评论数据仓库
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-10
  */
 class CommentRepository {
     
-    /**
-     * 获取视频的评论列表（扁平化结构，包含顶级评论和回复）
-     */
     suspend fun getComments(videoId: String): List<Comment> {
-        delay(500)
-        
-        // 返回扁平化的评论列表，通过 parentCommentId 来标识父子关系
         return listOf(
             // 顶级评论1
             Comment(
-                id = 1L,
-                videoId = videoId.toLongOrNull() ?: 1L,
+                id = "c001",
+                videoId = "",
                 authorId = 1L,
                 authorName = "用户A",
                 content = "这个内容很不错，学到了很多！",
