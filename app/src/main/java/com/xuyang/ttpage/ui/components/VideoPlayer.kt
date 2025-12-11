@@ -2,14 +2,11 @@ package com.xuyang.ttpage.ui.components
 
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.VolumeUp
-import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -128,9 +125,9 @@ fun VideoPlayer(
                         }
                     }
                 ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) "暂停" else "播放"
+                    Text(
+                        text = if (isPlaying) "暂停" else "播放",
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
                 
@@ -165,16 +162,11 @@ fun VideoPlayer(
                     IconButton(
                         onClick = { showSpeedMenu = !showSpeedMenu }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Speed,
-                            contentDescription = "倍速"
-                        )
-                    }
                     Text(
                         text = "${playbackSpeed}x",
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.padding(start = 4.dp)
+                        style = MaterialTheme.typography.labelSmall
                     )
+                    }
                     DropdownMenu(
                         expanded = showSpeedMenu,
                         onDismissRequest = { showSpeedMenu = false }
@@ -198,9 +190,9 @@ fun VideoPlayer(
                     IconButton(
                         onClick = { showVolumeControl = !showVolumeControl }
                     ) {
-                        Icon(
-                            imageVector = if (currentVolume > 0) Icons.Default.VolumeUp else Icons.Default.VolumeOff,
-                            contentDescription = "音量"
+                        Text(
+                            text = if (currentVolume > 0) "音量" else "静音",
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
                     if (showVolumeControl) {

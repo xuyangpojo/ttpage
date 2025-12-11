@@ -108,8 +108,8 @@ class HomeViewModelTest {
             assertNotNull(video.title)
             assertNotNull(video.authorId)
             assertNotNull(video.authorName)
-            assertTrue(video.likeCount >= 0)
-            assertTrue(video.commentCount >= 0)
+            assertTrue(video.likeCount >= 0u)
+            assertTrue(video.commentCount >= 0u)
         }
     }
     

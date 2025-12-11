@@ -34,8 +34,8 @@ class VideoRepositoryTest {
             assertNotNull(video.authorId)
             assertNotNull(video.authorName)
             assertNotNull(video.publishTime)
-            assertTrue(video.likeCount >= 0)
-            assertTrue(video.commentCount >= 0)
+            assertTrue(video.likeCount >= 0u)
+            assertTrue(video.commentCount >= 0u)
         }
     }
     

@@ -34,8 +34,8 @@ class CommentRepositoryTest {
             assertNotNull(comment.authorName)
             assertNotNull(comment.content)
             assertNotNull(comment.publishTime)
-            assertTrue(comment.likeCount >= 0)
-            assertTrue(comment.replyCount >= 0)
+            assertTrue(comment.likeCount >= 0u)
+            assertTrue(comment.replyCount >= 0u)
         }
     }
     

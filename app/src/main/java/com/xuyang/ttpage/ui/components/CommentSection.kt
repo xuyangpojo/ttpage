@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.filled.Reply
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -174,13 +173,8 @@ fun CommentItem(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.clickable { onReplyClick(comment.id.toString()) }
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Reply,
-                        contentDescription = "回复",
-                        modifier = Modifier.size(18.dp)
-                    )
                     Text(
-                        text = if (comment.replyCount > 0) "${comment.replyCount}" else "回复",
+                        text = if (comment.replyCount > 0u) "${comment.replyCount.toInt()}" else "回复",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -251,7 +245,8 @@ fun ReplyItem(
             )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.clickable { onLikeClick() }
             ) {
                 Icon(
                     imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -260,7 +255,7 @@ fun ReplyItem(
                     tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = "${reply.likeCount}",
+                    text = "${reply.likeCount.toInt()}",
                     style = MaterialTheme.typography.bodySmall
                 )
             }

@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.xuyang.ttpage.model.data.Video
-import com.xuyang.ttpage.ui.screens.HomeScreen.VideoCard
+import com.xuyang.ttpage.ui.screens.VideoCard
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import com.xuyang.ttpage.viewmodel.UserViewModel
 

@@ -23,9 +23,17 @@ class CommentViewModel : ViewModel() {
     val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
     
     // UI状态：树形结构的评论列表（用于UI展示）
-    val commentsWithReplies: StateFlow<List<CommentWithReplies>> = _comments.map { flatComments ->
-        buildCommentTree(flatComments)
-    }.asStateFlow()
+    private val _commentsWithReplies = MutableStateFlow<List<CommentWithReplies>>(emptyList())
+    val commentsWithReplies: StateFlow<List<CommentWithReplies>> = _commentsWithReplies.asStateFlow()
+    
+    init {
+        // 当评论列表变化时，更新树形结构
+        viewModelScope.launch {
+            _comments.collect { flatComments ->
+                _commentsWithReplies.value = buildCommentTree(flatComments)
+            }
+        }
+    }
     
     // UI状态：加载状态
     private val _isLoading = MutableStateFlow(false)

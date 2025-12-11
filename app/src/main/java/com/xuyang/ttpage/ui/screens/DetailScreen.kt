@@ -5,6 +5,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +40,7 @@ import kotlin.math.abs
  * 2. 支持滑动返回（通过Navigation的返回功能）
  * 3. 支持上下滑动切换不同内容
  */
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DetailScreen(
     video: Video,
@@ -61,7 +64,8 @@ fun DetailScreen(
     
     // 当视频列表变化时，更新页面数量
     LaunchedEffect(videos.size) {
-        if (pagerState.pageCount != videos.size) {
+        val pageCount = videos.size.coerceAtLeast(1)
+        if (pagerState.pageCount != pageCount) {
             // 如果当前页面超出范围，跳转到最后一页
             val targetPage = currentIndex.coerceIn(0, videos.size - 1)
             if (targetPage != pagerState.currentPage) {
@@ -334,5 +338,4 @@ fun DetailVideoPage(
             CommentSection(videoId = video.id)
         }
     }
-}
 

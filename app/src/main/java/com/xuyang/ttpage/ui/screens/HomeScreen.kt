@@ -13,15 +13,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.foundation.lazy.animateScrollToItem
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,9 +33,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.pullrefresh.PullRefreshIndicator
-import androidx.compose.material3.pullrefresh.pullRefresh
-import androidx.compose.material3.pullrefresh.rememberPullRefreshState
+// PullRefresh API may not be available in this Material3 version
+// import androidx.compose.material3.pullrefresh.PullRefreshIndicator
+// import androidx.compose.material3.pullrefresh.pullRefresh
+// import androidx.compose.material3.pullrefresh.rememberPullRefreshState
 import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.model.data.Topic
 import com.xuyang.ttpage.util.ResourceHelper
@@ -69,15 +73,82 @@ fun HomeScreen(
     val topics by topicViewModel.topics.collectAsState()
     val selectedTopicId by topicViewModel.selectedTopicId.collectAsState()
     
-    // 创建LazyListState用于控制滚动
+    // 创建两个LazyListState，使用共享的滚动偏移量实现同步滚动
     val leftListState = rememberLazyListState()
     val rightListState = rememberLazyListState()
     
-    // 下拉刷新状态
-    val pullRefreshState = rememberPullRefreshState(
-        refreshing = isLoading && contents.isNotEmpty(),
-        onRefresh = { viewModel.refreshVideos() }
-    )
+    // 同步滚动标志，防止循环同步
+    var isSyncingScroll by remember { mutableStateOf(false) }
+    
+    // 使用 snapshotFlow 实时监听左列滚动变化，同步到右列
+    LaunchedEffect(leftListState) {
+        snapshotFlow {
+            leftListState.firstVisibleItemIndex to leftListState.firstVisibleItemScrollOffset
+        }
+        .collect { (index, offset) ->
+            // 只有在不是同步过程中才执行，避免循环同步
+            if (!isSyncingScroll && rightListState.layoutInfo.totalItemsCount > 0) {
+                isSyncingScroll = true
+                
+                val rightIndex = index.coerceIn(
+                    0,
+                    rightListState.layoutInfo.totalItemsCount - 1
+                )
+                
+                // 使用 scrollToItem 实现实时同步
+                try {
+                    rightListState.scrollToItem(
+                        index = rightIndex,
+                        scrollOffset = offset
+                    )
+                } catch (e: Exception) {
+                    // 忽略滚动错误（可能因为索引超出范围）
+                }
+                
+                // 短暂延迟后重置标志，允许下一次同步
+                kotlinx.coroutines.delay(1)
+                isSyncingScroll = false
+            }
+        }
+    }
+    
+    // 使用 snapshotFlow 实时监听右列滚动变化，同步到左列
+    LaunchedEffect(rightListState) {
+        snapshotFlow {
+            rightListState.firstVisibleItemIndex to rightListState.firstVisibleItemScrollOffset
+        }
+        .collect { (index, offset) ->
+            // 只有在不是同步过程中才执行，避免循环同步
+            if (!isSyncingScroll && leftListState.layoutInfo.totalItemsCount > 0) {
+                isSyncingScroll = true
+                
+                val leftIndex = index.coerceIn(
+                    0,
+                    leftListState.layoutInfo.totalItemsCount - 1
+                )
+                
+                // 使用 scrollToItem 实现实时同步
+                try {
+                    leftListState.scrollToItem(
+                        index = leftIndex,
+                        scrollOffset = offset
+                    )
+                } catch (e: Exception) {
+                    // 忽略滚动错误（可能因为索引超出范围）
+                }
+                
+                // 短暂延迟后重置标志，允许下一次同步
+                kotlinx.coroutines.delay(1)
+                isSyncingScroll = false
+            }
+        }
+    }
+    
+    // 下拉刷新状态 - 暂时禁用，因为 pullrefresh API 可能不可用
+    // val pullRefreshState = rememberPullRefreshState(
+    //     refreshing = isLoading && videos.isNotEmpty(),
+    //     onRefresh = { viewModel.refreshVideos() }
+    // )
     
     // 话题切换时刷新内容
     LaunchedEffect(selectedTopicId) {
@@ -128,85 +199,79 @@ fun HomeScreen(
                 CircularProgressIndicator()
             }
         } else {
-            // 双列布局（带下拉刷新）
+            // 双列布局（使用两个LazyColumn，通过同步滚动实现整体滚动效果）
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .pullRefresh(pullRefreshState)
+                modifier = Modifier.fillMaxSize()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 8.dp)
                 ) {
-                // 左列
-                LazyColumn(
-                    state = leftListState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(end = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 0 }) { _, video ->
-                    VideoCard(
-                        video = video,
-                        onClick = { onVideoClick(video) }
-                    )
-                }
-                
-                // 加载更多指示器
-                if (isLoading && videos.isNotEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    // 左列
+                    LazyColumn(
+                        state = leftListState,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                        userScrollEnabled = true
+                    ) {
+                        itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 0 }) { _, video ->
+                            VideoCard(
+                                video = video,
+                                onClick = { onVideoClick(video) }
+                            )
+                        }
+                        
+                        // 加载更多指示器
+                        if (isLoading && videos.isNotEmpty()) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 右列（可以滚动，通过同步实现与左列一起滚动）
+                    LazyColumn(
+                        state = rightListState,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(start = 4.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                        userScrollEnabled = true  // 恢复右列的滚动能力
+                    ) {
+                        itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 1 }) { _, video ->
+                            VideoCard(
+                                video = video,
+                                onClick = { onVideoClick(video) }
+                            )
+                        }
+                        
+                        // 加载更多指示器
+                        if (isLoading && videos.isNotEmpty()) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
                             }
                         }
                     }
                 }
-                
-                // 右列
-                LazyColumn(
-                    state = rightListState,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(start = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(vertical = 8.dp)
-                ) {
-                itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 1 }) { _, video ->
-                    VideoCard(
-                        video = video,
-                        onClick = { onVideoClick(video) }
-                    )
-                }
-                
-                // 加载更多指示器
-                if (isLoading && videos.isNotEmpty()) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                            }
-                        }
-                    }
-                }
-                
-                // 下拉刷新指示器
-                PullRefreshIndicator(
-                    refreshing = isLoading && contents.isNotEmpty(),
-                    state = pullRefreshState,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
             }
         }
     }
@@ -331,7 +396,6 @@ fun VideoCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         val maxWidth = maxWidth
-                        val density = LocalDensity.current
                         
                         // 获取图片尺寸并计算高度
                         val imageHeight = remember(coverResourceId, maxWidth) {
