@@ -35,12 +35,16 @@ import androidx.compose.runtime.rememberCoroutineScope
  * 3. 显示播放状态
  * 4. 倍速播放 (0.5x, 1x, 1.5x, 2x)
  * 5. 音量控制
+ * 6. 根据可见性控制自动播放
+ * 7. 播放完成回调
  */
 @Composable
 fun VideoPlayer(
     videoUrl: String,
     modifier: Modifier = Modifier,
-    onPlayerReady: (ExoPlayer) -> Unit = {}
+    isVisible: Boolean = true,
+    onPlayerReady: (ExoPlayer) -> Unit = {},
+    onPlaybackEnded: () -> Unit = {}
 ) {
     val context = LocalContext.current
     
@@ -102,13 +106,20 @@ fun VideoPlayer(
                 val mediaItem = MediaItem.fromUri(uri)
                 player.setMediaItem(mediaItem)
                 player.prepare()
-                player.playWhenReady = true  // 自动播放
+                player.playWhenReady = isVisible  // 根据可见性决定是否自动播放
                 player.repeatMode = Player.REPEAT_MODE_OFF
                 
-                // 添加错误监听
+                // 添加错误监听和播放完成监听
                 player.addListener(object : Player.Listener {
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                         playerError = "播放错误: ${error.message}"
+                    }
+                    
+                    override fun onPlaybackStateChanged(playbackState: Int) {
+                        // 播放完成时触发回调
+                        if (playbackState == Player.STATE_ENDED) {
+                            onPlaybackEnded()
+                        }
                     }
                 })
                 
@@ -144,6 +155,22 @@ fun VideoPlayer(
     var duration by remember { mutableStateOf(0L) }
     var playbackSpeed by remember { mutableStateOf(1f) }
     var showSpeedMenu by remember { mutableStateOf(false) }
+    
+    // 根据可见性控制播放/暂停
+    LaunchedEffect(isVisible, exoPlayer.value) {
+        val player = exoPlayer.value ?: return@LaunchedEffect
+        if (isVisible) {
+            // 可见时自动播放
+            if (!player.isPlaying) {
+                player.play()
+            }
+        } else {
+            // 不可见时暂停
+            if (player.isPlaying) {
+                player.pause()
+            }
+        }
+    }
     
     // 更新播放状态
     LaunchedEffect(exoPlayer.value) {

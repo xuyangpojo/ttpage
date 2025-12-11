@@ -35,6 +35,10 @@ import com.xuyang.ttpage.ui.components.CommentSection
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
  * View层：内容详情页
@@ -107,6 +111,19 @@ fun DetailScreen(
         }
     }
     
+    // 监听当前页面变化
+    var currentPage by remember { mutableStateOf(pagerState.currentPage) }
+    val coroutineScope = rememberCoroutineScope()
+    
+    // 监听页面变化
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }
+            .distinctUntilChanged()
+            .collect { page ->
+                currentPage = page
+            }
+    }
+    
     Scaffold(
     ) { paddingValues ->
         // 使用VerticalPager实现上下切换
@@ -118,9 +135,20 @@ fun DetailScreen(
             key = { index -> videos.getOrNull(index)?.id ?: index }
         ) { page ->
             val currentVideo = videos.getOrNull(page) ?: video
+            // 判断当前页面是否可见（只有当前页面才播放）
+            val isVisible = page == currentPage
             
             DetailVideoPage(
                 video = currentVideo,
+                isVisible = isVisible,
+                onPlaybackEnded = {
+                    // 播放完成后，切换到下一个视频
+                    if (page == currentPage && page < videos.size - 1) {
+                        coroutineScope.launch {
+                            pagerState.animateScrollToPage(page + 1)
+                        }
+                    }
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -133,6 +161,8 @@ fun DetailScreen(
 @Composable
 fun DetailVideoPage(
     video: Video,
+    isVisible: Boolean = true,
+    onPlaybackEnded: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -162,6 +192,8 @@ fun DetailVideoPage(
         if (video.hasVideo && !video.videoUrl.isNullOrBlank()) {
             VideoPlayer(
                 videoUrl = video.videoUrl!!,
+                isVisible = isVisible,
+                onPlaybackEnded = onPlaybackEnded,
                 modifier = Modifier.fillMaxSize()
             )
         } else {
