@@ -16,8 +16,8 @@ class CommentRepository {
             // 顶级评论1
             Comment(
                 id = "c001",
-                videoId = "",
-                authorId = 1L,
+                videoId = videoId,
+                authorId = "u001",
                 authorName = "用户A",
                 content = "这个内容很不错，学到了很多！",
                 publishTime = "1小时前",
@@ -27,33 +27,33 @@ class CommentRepository {
             ),
             // 评论1的回复1
             Comment(
-                id = 2L,
-                videoId = videoId.toLongOrNull() ?: 1L,
-                authorId = 2L,
+                id = "c002",
+                videoId = videoId,
+                authorId = "u002",
                 authorName = "用户B",
                 content = "同感！",
                 publishTime = "30分钟前",
                 likeCount = 3u,
                 replyCount = 0u,
-                parentCommentId = "1"
+                parentCommentId = "c001"
             ),
             // 评论1的回复2
             Comment(
-                id = 3L,
-                videoId = videoId.toLongOrNull() ?: 1L,
-                authorId = 3L,
+                id = "c003",
+                videoId = videoId,
+                authorId = "u003",
                 authorName = "用户C",
                 content = "确实很有帮助",
                 publishTime = "20分钟前",
                 likeCount = 1u,
                 replyCount = 0u,
-                parentCommentId = "1"
+                parentCommentId = "c001"
             ),
             // 顶级评论2
             Comment(
-                id = 4L,
-                videoId = videoId.toLongOrNull() ?: 1L,
-                authorId = 4L,
+                id = "c004",
+                videoId = videoId,
+                authorId = "u004",
                 authorName = "用户D",
                 content = "希望能有更多这样的内容",
                 publishTime = "2小时前",
@@ -63,21 +63,21 @@ class CommentRepository {
             ),
             // 评论2的回复1
             Comment(
-                id = 5L,
-                videoId = videoId.toLongOrNull() ?: 1L,
-                authorId = 5L,
+                id = "c005",
+                videoId = videoId,
+                authorId = "u005",
                 authorName = "用户E",
                 content = "支持！",
                 publishTime = "1小时前",
                 likeCount = 2u,
                 replyCount = 0u,
-                parentCommentId = "4"
+                parentCommentId = "c004"
             ),
             // 顶级评论3
             Comment(
-                id = 6L,
-                videoId = videoId.toLongOrNull() ?: 1L,
-                authorId = 6L,
+                id = "c006",
+                videoId = videoId,
+                authorId = "u006",
                 authorName = "用户F",
                 content = "感谢分享",
                 publishTime = "3小时前",
@@ -94,7 +94,7 @@ class CommentRepository {
     suspend fun addComment(videoId: String, content: String, parentCommentId: String? = null): Comment {
         delay(300)
         return Comment(
-            id = System.currentTimeMillis(),
+            id = System.currentTimeMillis().toString(),
             videoId = videoId,
             authorId = "u001",
             authorName = "当前用户",

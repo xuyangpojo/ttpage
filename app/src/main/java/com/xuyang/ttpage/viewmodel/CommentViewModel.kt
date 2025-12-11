@@ -81,7 +81,7 @@ class CommentViewModel : ViewModel() {
                 _likedCommentIds.value = _likedCommentIds.value + commentId
                 // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
-                    if (comment.id.toString() == commentId) {
+                    if (comment.id == commentId) {
                         comment.copy(likeCount = comment.likeCount + 1u)
                     } else {
                         comment
@@ -103,7 +103,7 @@ class CommentViewModel : ViewModel() {
                 _likedCommentIds.value = _likedCommentIds.value - commentId
                 // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
-                    if (comment.id.toString() == commentId) {
+                    if (comment.id == commentId) {
                         comment.copy(likeCount = (comment.likeCount - 1u).coerceAtLeast(0u))
                     } else {
                         comment
@@ -129,7 +129,7 @@ class CommentViewModel : ViewModel() {
      */
     private fun buildCommentTree(flatComments: List<Comment>): List<CommentWithReplies> {
         // 将评论按ID建立索引
-        val commentMap = flatComments.associateBy { it.id.toString() }
+        val commentMap = flatComments.associateBy { it.id }
         
         // 找出所有顶级评论（parentCommentId为null）
         val topLevelComments = flatComments.filter { it.parentCommentId == null }
@@ -141,7 +141,7 @@ class CommentViewModel : ViewModel() {
                 .map { comment ->
                     CommentWithReplies(
                         comment = comment,
-                        replies = buildReplies(comment.id.toString())
+                        replies = buildReplies(comment.id)
                     )
                 }
         }
@@ -149,7 +149,7 @@ class CommentViewModel : ViewModel() {
         return topLevelComments.map { comment ->
             CommentWithReplies(
                 comment = comment,
-                replies = buildReplies(comment.id.toString())
+                replies = buildReplies(comment.id)
             )
         }
     }

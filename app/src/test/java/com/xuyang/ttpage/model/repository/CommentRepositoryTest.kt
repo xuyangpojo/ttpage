@@ -54,7 +54,7 @@ class CommentRepositoryTest {
         // 验证回复的parentCommentId指向存在的顶级评论
         replies.forEach { reply ->
             assertNotNull(reply.parentCommentId)
-            val parentExists = comments.any { it.id.toString() == reply.parentCommentId }
+            val parentExists = comments.any { it.id == reply.parentCommentId }
             assertTrue("回复的父评论应该存在", parentExists)
         }
     }
@@ -74,19 +74,19 @@ class CommentRepositoryTest {
     @Test
     fun `addComment with parentCommentId should return reply`() = runTest {
         // When
-        val reply = repository.addComment("video1", "Reply comment", "c1")
+        val reply = repository.addComment("video1", "Reply comment", "c001")
         
         // Then
         assertNotNull(reply)
         assertNotNull(reply.videoId)
         assertEquals("Reply comment", reply.content)
-        assertEquals("c1", reply.parentCommentId)
+        assertEquals("c001", reply.parentCommentId)
     }
     
     @Test
     fun `likeComment should return true`() = runTest {
         // When
-        val result = repository.likeComment("c1")
+        val result = repository.likeComment("c001")
         
         // Then
         assertTrue(result)
@@ -95,10 +95,31 @@ class CommentRepositoryTest {
     @Test
     fun `unlikeComment should return true`() = runTest {
         // When
-        val result = repository.unlikeComment("c1")
+        val result = repository.unlikeComment("c001")
         
         // Then
         assertTrue(result)
+    }
+    
+    @Test
+    fun `getComments should return comments with correct videoId`() = runTest {
+        // When
+        val comments = repository.getComments("video1")
+        
+        // Then
+        comments.forEach { comment ->
+            assertEquals("video1", comment.videoId)
+        }
+    }
+    
+    @Test
+    fun `getComments should return comments with unique ids`() = runTest {
+        // When
+        val comments = repository.getComments("video1")
+        
+        // Then
+        val ids = comments.map { it.id }
+        assertEquals(ids.size, ids.distinct().size)
     }
 }
 

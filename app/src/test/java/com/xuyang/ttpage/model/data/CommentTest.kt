@@ -12,9 +12,9 @@ class CommentTest {
     fun `comment should have all required fields`() {
         // Given & When
         val comment = Comment(
-            id = 1L,
-            videoId = 1L,
-            authorId = 1L,
+            id = "c001",
+            videoId = "v001",
+            authorId = "u001",
             authorName = "Test Author",
             content = "Test comment",
             publishTime = "1小时前",
@@ -23,9 +23,9 @@ class CommentTest {
         )
         
         // Then
-        assertEquals(1L, comment.id)
-        assertEquals(1L, comment.videoId)
-        assertEquals(1L, comment.authorId)
+        assertEquals("c001", comment.id)
+        assertEquals("v001", comment.videoId)
+        assertEquals("u001", comment.authorId)
         assertEquals("Test Author", comment.authorName)
         assertEquals("Test comment", comment.content)
         assertEquals("1小时前", comment.publishTime)
@@ -38,28 +38,28 @@ class CommentTest {
     fun `comment with parent should have parentCommentId`() {
         // Given & When
         val reply = Comment(
-            id = 2L,
-            videoId = 1L,
-            authorId = 2L,
+            id = "c002",
+            videoId = "v001",
+            authorId = "u002",
             authorName = "Reply Author",
             content = "Reply content",
             publishTime = "30分钟前",
             likeCount = 5u,
             replyCount = 0u,
-            parentCommentId = "1"
+            parentCommentId = "c001"
         )
         
         // Then
-        assertEquals("1", reply.parentCommentId)
+        assertEquals("c001", reply.parentCommentId)
     }
     
     @Test
     fun `CommentWithReplies should build tree structure correctly`() {
         // Given
         val parentComment = Comment(
-            id = 1L,
-            videoId = 1L,
-            authorId = 1L,
+            id = "c001",
+            videoId = "v001",
+            authorId = "u001",
             authorName = "Parent Author",
             content = "Parent comment",
             publishTime = "1小时前",
@@ -69,27 +69,27 @@ class CommentTest {
         )
         
         val reply1 = Comment(
-            id = 2L,
-            videoId = 1L,
-            authorId = 2L,
+            id = "c002",
+            videoId = "v001",
+            authorId = "u002",
             authorName = "Reply1",
             content = "Reply 1",
             publishTime = "30分钟前",
             likeCount = 3u,
             replyCount = 0u,
-            parentCommentId = "1"
+            parentCommentId = "c001"
         )
         
         val reply2 = Comment(
-            id = 3L,
-            videoId = 1L,
-            authorId = 3L,
+            id = "c003",
+            videoId = "v001",
+            authorId = "u003",
             authorName = "Reply2",
             content = "Reply 2",
             publishTime = "20分钟前",
             likeCount = 1u,
             replyCount = 0u,
-            parentCommentId = "1"
+            parentCommentId = "c001"
         )
         
         // When
@@ -104,8 +104,8 @@ class CommentTest {
         // Then
         assertEquals(parentComment.id, commentWithReplies.comment.id)
         assertEquals(2, commentWithReplies.replies.size)
-        assertEquals(2L, commentWithReplies.replies[0].comment.id)
-        assertEquals(3L, commentWithReplies.replies[1].comment.id)
+        assertEquals("c002", commentWithReplies.replies[0].comment.id)
+        assertEquals("c003", commentWithReplies.replies[1].comment.id)
     }
 }
 

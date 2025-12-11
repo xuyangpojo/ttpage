@@ -173,5 +173,63 @@ class UserViewModelTest {
         delay(1500)
         assertFalse(viewModel.isLoading.value)
     }
+    
+    @Test
+    fun `isLoggedIn should be false initially`() = runTest {
+        // Given
+        val viewModel = UserViewModel()
+        
+        // Then
+        assertFalse(viewModel.isLoggedIn.value)
+        assertNull(viewModel.currentUser.value)
+    }
+    
+    @Test
+    fun `isLoggedIn should be true after successful login`() = runTest {
+        // Given
+        val viewModel = UserViewModel()
+        
+        // When
+        viewModel.login("testuser", "password")
+        delay(1500)
+        
+        // Then
+        assertTrue(viewModel.isLoggedIn.value)
+        assertNotNull(viewModel.currentUser.value)
+    }
+    
+    @Test
+    fun `isLoggedIn should be false after logout`() = runTest {
+        // Given
+        val viewModel = UserViewModel()
+        viewModel.login("testuser", "password")
+        delay(1500)
+        
+        // Verify logged in
+        assertTrue(viewModel.isLoggedIn.value)
+        
+        // When
+        viewModel.logout()
+        
+        // Then
+        assertFalse(viewModel.isLoggedIn.value)
+        assertNull(viewModel.currentUser.value)
+    }
+    
+    @Test
+    fun `register should set email correctly`() = runTest {
+        // Given
+        val viewModel = UserViewModel()
+        val email = "test@example.com"
+        
+        // When
+        viewModel.register("testuser", email, "password")
+        delay(1500)
+        
+        // Then
+        val user = viewModel.currentUser.value
+        assertNotNull(user)
+        assertEquals(email, user?.email)
+    }
 }
 

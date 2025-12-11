@@ -99,5 +99,44 @@ class TopicViewModelTest {
         val selectedTopic = viewModel.getSelectedTopic()
         assertNull(selectedTopic)
     }
+    
+    @Test
+    fun `isLoading should be false after topics are loaded`() = runTest {
+        // Given
+        val viewModel = TopicViewModel()
+        
+        // Wait for loading to complete
+        delay(500)
+        
+        // Then
+        assertFalse(viewModel.isLoading.value)
+    }
+    
+    @Test
+    fun `topics should contain all topic`() = runTest {
+        // Given
+        val viewModel = TopicViewModel()
+        delay(500) // Wait for topics to load
+        
+        // Then
+        val topics = viewModel.topics.value
+        assertTrue(topics.isNotEmpty())
+        val allTopic = topics.find { it.id == "all" }
+        assertNotNull(allTopic)
+        assertEquals("全部", allTopic?.name)
+    }
+    
+    @Test
+    fun `selectTopic should update selectedTopicId immediately`() = runTest {
+        // Given
+        val viewModel = TopicViewModel()
+        delay(500) // Wait for topics to load
+        
+        // When
+        viewModel.selectTopic("tech")
+        
+        // Then - 应该立即更新，不需要等待
+        assertEquals("tech", viewModel.selectedTopicId.value)
+    }
 }
 
