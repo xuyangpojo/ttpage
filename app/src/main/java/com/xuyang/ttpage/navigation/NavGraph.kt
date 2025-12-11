@@ -12,7 +12,10 @@ import com.xuyang.ttpage.viewmodel.HomeViewModel
 import com.xuyang.ttpage.viewmodel.TopicViewModel
 
 /**
- * 导航图配置
+ * NavGraph 导航图
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-10
  */
 @Composable
 fun NavGraph(
@@ -21,24 +24,20 @@ fun NavGraph(
     startDestination: String = Screen.Home.route,
     scrollToTopTrigger: Int = 0
 ) {
-    // 共享ViewModel实例
     val homeViewModel: HomeViewModel = viewModel()
     val topicViewModel: TopicViewModel = viewModel()
-    
     NavHost(
         navController = navController,
         startDestination = startDestination,
         modifier = modifier
     ) {
-        // 首页
+        // 菜单栏1: 首页
         composable(Screen.Home.route) {
             HomeScreen(
                 viewModel = homeViewModel,
                 topicViewModel = topicViewModel,
                 onVideoClick = { video ->
-                    // 导航到详情页，传递Video ID
                     navController.navigate("detail/${video.id}") {
-                        // 保存状态，避免重复创建
                         launchSingleTop = true
                     }
                 },
@@ -48,8 +47,7 @@ fun NavGraph(
                 scrollToTopTrigger = scrollToTopTrigger
             )
         }
-        
-        // 我的页面
+        // 菜单栏2: 我的
         composable(Screen.Profile.route) {
             ProfileScreen(
                 homeViewModel = homeViewModel,
@@ -66,8 +64,7 @@ fun NavGraph(
                 }
             )
         }
-        
-        // 登录页面
+        // 我的 - 登录
         composable(Screen.Login.route) {
             LoginScreen(
                 onBackClick = {
@@ -78,8 +75,7 @@ fun NavGraph(
                 }
             )
         }
-        
-        // 注册页面
+        // 我的 - 注册
         composable(Screen.Register.route) {
             RegisterScreen(
                 onBackClick = {
@@ -90,25 +86,22 @@ fun NavGraph(
                 }
             )
         }
-        
-        // 详情页
+        // 视频 - 详情
         composable(
             route = "detail/{${Screen.VIDEO_ID_ARG}}"
         ) { backStackEntry ->
-            // 从参数中获取videoId
             val videoId = backStackEntry.arguments?.getString(Screen.VIDEO_ID_ARG) ?: ""
-            
-            // 从HomeViewModel获取对应的Video对象
             val video = homeViewModel.getVideoById(videoId) ?: Video(
                 id = videoId,
                 title = "视频不存在",
-                author = "未知",
+                authorId = "unknown",
+                authorName = "未知",
                 publishTime = "未知",
                 likeCount = 0u,
                 commentCount = 0u,
-                isHot = false
+                isHot = false,
+                topics = emptyList()
             )
-            
             DetailScreen(
                 video = video,
                 onBackClick = {

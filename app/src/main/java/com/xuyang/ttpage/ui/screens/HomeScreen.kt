@@ -387,7 +387,7 @@ fun VideoCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = video.author,
+                    text = video.authorName,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

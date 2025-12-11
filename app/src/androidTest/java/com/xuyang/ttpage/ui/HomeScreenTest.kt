@@ -4,7 +4,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.xuyang.ttpage.model.data.Content
 import com.xuyang.ttpage.ui.screens.HomeScreen
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import org.junit.Rule
@@ -22,17 +21,6 @@ class HomeScreenTest {
     
     @Test
     fun homeScreen_displaysContent() {
-        // Given
-        val testContent = Content(
-            id = "1",
-            title = "Test Title",
-            author = "Test Author",
-            publishTime = "1小时前",
-            likeCount = 100u,
-            commentCount = 50u,
-            isHot = true
-        )
-        
         // When
         composeTestRule.setContent {
             HomeScreen()

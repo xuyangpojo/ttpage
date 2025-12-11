@@ -95,8 +95,8 @@ class CommentRepository {
         delay(300)
         return Comment(
             id = System.currentTimeMillis(),
-            videoId = videoId.toLongOrNull() ?: 1L,
-            authorId = 999L, // 当前用户ID
+            videoId = videoId,
+            authorId = "u001",
             authorName = "当前用户",
             content = content,
             publishTime = "刚刚",
@@ -105,20 +105,14 @@ class CommentRepository {
             parentCommentId = parentCommentId
         )
     }
-    
-    /**
-     * 点赞评论
-     */
+
     suspend fun likeComment(commentId: String): Boolean {
-        delay(200)
+        delay(100)
         return true
     }
     
-    /**
-     * 取消点赞评论
-     */
     suspend fun unlikeComment(commentId: String): Boolean {
-        delay(200)
+        delay(100)
         return true
     }
 }

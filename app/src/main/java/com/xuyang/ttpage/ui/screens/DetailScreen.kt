@@ -181,7 +181,7 @@ fun DetailVideoPage(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = video.author,
+                text = video.authorName,
                 style = MaterialTheme.typography.bodyLarge
             )
             
@@ -307,13 +307,15 @@ fun DetailVideoPage(
                         Video(
                             id = "${video.id}",
                             title = "${video.title}",
-                            author = "${video.author}",
+                            authorId = "${video.authorId}",
+                            authorName = "${video.authorName}",
                             publishTime = "${video.publishTime}",
                             likeCount = ${video.likeCount},
                             commentCount = ${video.commentCount},
                             isHot = ${video.isHot},
                             videoCover = ${video.videoCover?.let { "\"$it\"" } ?: "null"},
-                            videoUrl = ${video.videoUrl?.let { "\"$it\"" } ?: "null"}
+                            videoUrl = ${video.videoUrl?.let { "\"$it\"" } ?: "null"},
+                            topics = ${video.topics}
                         )
                     """.trimIndent(),
                     modifier = Modifier.padding(16.dp),

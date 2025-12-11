@@ -106,7 +106,8 @@ class HomeViewModelTest {
         videos.forEach { video ->
             assertNotNull(video.id)
             assertNotNull(video.title)
-            assertNotNull(video.author)
+            assertNotNull(video.authorId)
+            assertNotNull(video.authorName)
             assertTrue(video.likeCount >= 0)
             assertTrue(video.commentCount >= 0)
         }

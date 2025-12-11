@@ -23,13 +23,13 @@ import android.media.AudioManager
 import android.content.Context
 
 /**
- * 视频播放器组件
- * 
- * 功能：
+ * VideoPlayer 视频播放器组件
+ * @author xuyang
+ * @date 2025-12-10
  * 1. 视频播放和暂停
  * 2. 进度条控制
  * 3. 显示播放状态
- * 4. 倍速播放（0.5x, 1x, 1.5x, 2x）
+ * 4. 倍速播放 (0.5x, 1x, 1.5x, 2x)
  * 5. 音量控制
  */
 @Composable
@@ -40,29 +40,24 @@ fun VideoPlayer(
 ) {
     val context = LocalContext.current
     
-    // 将资源名称转换为URI（如果是本地资源）
     val videoUri = remember(videoUrl) {
         if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://") || videoUrl.startsWith("android.resource://")) {
-            // 已经是完整的URI
             videoUrl
         } else {
-            // 本地资源名称，转换为android.resource://格式
             ResourceHelper.getRawResourceUri(context, videoUrl)
         }
     }
     
-    // 创建ExoPlayer实例
     val exoPlayer = remember(videoUri) {
         ExoPlayer.Builder(context).build().apply {
             val mediaItem = MediaItem.fromUri(videoUri)
             setMediaItem(mediaItem)
             prepare()
-            playWhenReady = false // 默认不自动播放
+            playWhenReady = false
             repeatMode = Player.REPEAT_MODE_OFF
         }
     }
     
-    // 播放状态
     var isPlaying by remember { mutableStateOf(false) }
     var currentPosition by remember { mutableStateOf(0L) }
     var duration by remember { mutableStateOf(0L) }
@@ -70,26 +65,21 @@ fun VideoPlayer(
     var showSpeedMenu by remember { mutableStateOf(false) }
     var showVolumeControl by remember { mutableStateOf(false) }
     
-    // 音量控制
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
     var currentVolume by remember { mutableIntStateOf(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)) }
     val maxVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) }
     
-    // 监听播放状态
     LaunchedEffect(exoPlayer, videoUri) {
         onPlayerReady(exoPlayer)
-        
-        // 更新播放状态
         while (true) {
             isPlaying = exoPlayer.isPlaying
             currentPosition = exoPlayer.currentPosition
             duration = if (exoPlayer.duration > 0) exoPlayer.duration else 0L
             playbackSpeed = exoPlayer.playbackParameters.speed
-            delay(100) // 每100ms更新一次
+            delay(100)
         }
     }
     
-    // 清理资源
     DisposableEffect(Unit) {
         onDispose {
             exoPlayer.release()
@@ -97,7 +87,6 @@ fun VideoPlayer(
     }
     
     Box(modifier = modifier) {
-        // ExoPlayer视图
         AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
@@ -106,13 +95,12 @@ fun VideoPlayer(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
                     )
-                    useController = false // 使用自定义控制器
+                    useController = false
                 }
             },
             modifier = Modifier.fillMaxSize()
         )
         
-        // 自定义控制栏
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -121,13 +109,11 @@ fun VideoPlayer(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 进度条和控制按钮
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 播放/暂停按钮
                 IconButton(
                     onClick = {
                         if (exoPlayer.isPlaying) {
@@ -143,14 +129,12 @@ fun VideoPlayer(
                     )
                 }
                 
-                // 时间显示
                 Text(
                     text = formatTime(currentPosition),
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.width(50.dp)
                 )
                 
-                // 进度条
                 Slider(
                     value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
                     onValueChange = { progress ->
@@ -160,7 +144,6 @@ fun VideoPlayer(
                     modifier = Modifier.weight(1f)
                 )
                 
-                // 总时长
                 Text(
                     text = formatTime(duration),
                     style = MaterialTheme.typography.bodySmall,
@@ -168,13 +151,11 @@ fun VideoPlayer(
                 )
             }
             
-            // 倍速和音量控制行
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 倍速播放按钮
                 Box {
                     IconButton(
                         onClick = { showSpeedMenu = !showSpeedMenu }
@@ -189,8 +170,6 @@ fun VideoPlayer(
                         style = MaterialTheme.typography.labelSmall,
                         modifier = Modifier.padding(start = 4.dp)
                     )
-                    
-                    // 倍速菜单
                     DropdownMenu(
                         expanded = showSpeedMenu,
                         onDismissRequest = { showSpeedMenu = false }
@@ -207,8 +186,6 @@ fun VideoPlayer(
                         }
                     }
                 }
-                
-                // 音量控制按钮
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -221,8 +198,6 @@ fun VideoPlayer(
                             contentDescription = "音量"
                         )
                     }
-                    
-                    // 音量滑块（当显示时）
                     if (showVolumeControl) {
                         Slider(
                             value = currentVolume.toFloat() / maxVolume,
@@ -240,9 +215,6 @@ fun VideoPlayer(
     }
 }
 
-/**
- * 格式化时间（毫秒转 mm:ss）
- */
 private fun formatTime(millis: Long): String {
     val totalSeconds = millis / 1000
     val minutes = totalSeconds / 60

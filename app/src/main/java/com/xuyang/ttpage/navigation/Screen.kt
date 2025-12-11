@@ -3,7 +3,10 @@ package com.xuyang.ttpage.navigation
 import com.xuyang.ttpage.model.data.Video
 
 /**
- * 导航路由定义
+ * Screen 导航路由定义
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-10
  */
 sealed class Screen(val route: String) {
     object Home : Screen("home")
@@ -13,9 +16,7 @@ sealed class Screen(val route: String) {
     data class Detail(val video: Video) : Screen("detail/{videoId}") {
         fun createRoute(videoId: String) = "detail/$videoId"
     }
-    
     companion object {
         const val VIDEO_ID_ARG = "videoId"
     }
 }
-

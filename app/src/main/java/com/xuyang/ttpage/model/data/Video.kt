@@ -19,7 +19,10 @@ data class Video(
     // 视频封面资源
     val videoCover: String? = null,
     // 视频文件资源
-    val videoUrl: String? = null
+    val videoUrl: String? = null,
+    // 视频所属的话题ID列表, 可为0到多个
+    // foreign key: Topic.kt
+    val topics: List<String> = emptyList()
 ) {
     val hasVideo: Boolean
         get() = !videoUrl.isNullOrBlank()

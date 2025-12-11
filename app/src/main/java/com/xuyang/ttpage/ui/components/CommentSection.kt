@@ -1,5 +1,6 @@
 package com.xuyang.ttpage.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,7 +18,10 @@ import com.xuyang.ttpage.model.data.CommentWithReplies
 import com.xuyang.ttpage.viewmodel.CommentViewModel
 
 /**
- * 评论区组件
+ * CommentSection 评论区组件
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-10
  */
 @Composable
 fun CommentSection(
@@ -28,6 +32,7 @@ fun CommentSection(
     val commentsWithReplies by viewModel.commentsWithReplies.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val likedCommentIds by viewModel.likedCommentIds.collectAsState()
+    var replyingToCommentId by remember { mutableStateOf<String?>(null) }
     
     LaunchedEffect(videoId) {
         viewModel.loadComments(videoId)
@@ -37,7 +42,6 @@ fun CommentSection(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 评论区标题
         Text(
             text = "评论区 (${commentsWithReplies.size})",
             style = MaterialTheme.typography.titleMedium,
@@ -47,18 +51,18 @@ fun CommentSection(
         if (isLoading && commentsWithReplies.isEmpty()) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
         } else {
-            // 评论列表
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 items(commentsWithReplies) { commentWithReplies ->
+                    val commentId = commentWithReplies.comment.id.toString()
                     CommentItem(
                         commentWithReplies = commentWithReplies,
-                        isLiked = likedCommentIds.contains(commentWithReplies.comment.id.toString()),
+                        isLiked = likedCommentIds.contains(commentId),
                         likedReplyIds = likedCommentIds,
+                        isReplying = replyingToCommentId == commentId,
                         onLikeClick = {
-                            val commentId = commentWithReplies.comment.id.toString()
                             if (likedCommentIds.contains(commentId)) {
                                 viewModel.unlikeComment(commentId)
                             } else {
@@ -73,17 +77,20 @@ fun CommentSection(
                             }
                         },
                         onReplyClick = { parentCommentId ->
-                            // TODO: 显示回复输入框
+                            replyingToCommentId = if (replyingToCommentId == parentCommentId) null else parentCommentId
                         },
                         onAddReply = { parentCommentId, replyContent ->
                             viewModel.addComment(commentWithReplies.comment.videoId.toString(), replyContent, parentCommentId)
+                            replyingToCommentId = null
+                        },
+                        onCancelReply = {
+                            replyingToCommentId = null
                         }
                     )
                 }
             }
         }
         
-        // 添加评论输入框
         CommentInput(
             onSendClick = { content ->
                 if (content.isNotBlank()) {
@@ -94,18 +101,17 @@ fun CommentSection(
     }
 }
 
-/**
- * 评论项组件
- */
 @Composable
 fun CommentItem(
     commentWithReplies: CommentWithReplies,
     isLiked: Boolean,
     likedReplyIds: Set<String>,
+    isReplying: Boolean,
     onLikeClick: () -> Unit,
     onReplyLikeClick: (String) -> Unit,
     onReplyClick: (String) -> Unit,
     onAddReply: (String, String) -> Unit,
+    onCancelReply: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val comment = commentWithReplies.comment
@@ -116,7 +122,6 @@ fun CommentItem(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 作者和时间
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -134,18 +139,15 @@ fun CommentItem(
                 )
             }
             
-            // 评论内容
             Text(
                 text = comment.content,
                 style = MaterialTheme.typography.bodyMedium
             )
             
-            // 操作按钮
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 点赞按钮
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -163,7 +165,6 @@ fun CommentItem(
                     )
                 }
                 
-                // 回复按钮
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -181,7 +182,6 @@ fun CommentItem(
                 }
             }
             
-            // 回复列表
             if (commentWithReplies.replies.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 commentWithReplies.replies.forEach { replyWithReplies ->
@@ -193,13 +193,22 @@ fun CommentItem(
                     )
                 }
             }
+            
+            if (isReplying) {
+                Spacer(modifier = Modifier.height(8.dp))
+                ReplyInput(
+                    onSendClick = { replyContent ->
+                        if (replyContent.isNotBlank()) {
+                            onAddReply(comment.id.toString(), replyContent)
+                        }
+                    },
+                    onCancelClick = onCancelReply
+                )
+            }
         }
     }
 }
 
-/**
- * 回复项组件
- */
 @Composable
 fun ReplyItem(
     reply: Comment,
@@ -255,9 +264,6 @@ fun ReplyItem(
     }
 }
 
-/**
- * 评论输入框组件
- */
 @Composable
 fun CommentInput(
     onSendClick: (String) -> Unit,
@@ -291,6 +297,53 @@ fun CommentInput(
                 imageVector = Icons.Default.Send,
                 contentDescription = "发送"
             )
+        }
+    }
+}
+
+@Composable
+fun ReplyInput(
+    onSendClick: (String) -> Unit,
+    onCancelClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var replyText by remember { mutableStateOf("") }
+    
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedTextField(
+            value = replyText,
+            onValueChange = { replyText = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text("写下你的回复...") },
+            singleLine = false,
+            maxLines = 3
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextButton(onClick = onCancelClick) {
+                Text("取消")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(
+                onClick = {
+                    if (replyText.isNotBlank()) {
+                        onSendClick(replyText)
+                        replyText = ""
+                    }
+                },
+                enabled = replyText.isNotBlank()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Send,
+                    contentDescription = "发送"
+                )
+            }
         }
     }
 }

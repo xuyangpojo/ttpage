@@ -8,11 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 /**
- * 底部导航栏
- * 
- * 功能：
- * 1. 首页和我的页面切换
- * 2. 点击首页时返回顶部并刷新（如果已在首页）
+ * BottomNavigationBar 底部导航栏
+ * @brief 在[首页,我的]之间切换; 再次点击[首页]时返回顶部并刷新
+ * @author xuyang
+ * @date 2025-12-10
  */
 @Composable
 fun BottomNavigationBar(

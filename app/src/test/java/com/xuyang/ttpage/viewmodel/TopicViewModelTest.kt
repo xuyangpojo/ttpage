@@ -61,13 +61,13 @@ class TopicViewModelTest {
         delay(500) // Wait for topics to load
         
         // When
-        viewModel.selectTopic("entertainment")
+        viewModel.selectTopic("tech")
         
         // Then
         val selectedTopic = viewModel.getSelectedTopic()
         assertNotNull(selectedTopic)
-        assertEquals("entertainment", selectedTopic?.id)
-        assertEquals("娱乐", selectedTopic?.name)
+        assertEquals("tech", selectedTopic?.id)
+        assertEquals("科技", selectedTopic?.name)
     }
     
     @Test

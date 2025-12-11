@@ -4,137 +4,155 @@ import com.xuyang.ttpage.model.data.Video
 import kotlinx.coroutines.delay
 
 /**
- * Model层：视频数据仓库
- * 负责提供视频数据（模拟数据源）
+ * VideoRepository 视频数据仓库
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-10
  */
 class VideoRepository {
     
-    /**
-     * 获取推荐视频列表
-     * 返回模拟数据
-     */
     suspend fun getRecommendedVideos(): List<Video> {
-        // 模拟网络请求延迟
-        delay(500)
-        
         return listOf(
             Video(
-                id = "1",
-                title = "Android Jetpack Compose 入门教程：从零开始学习现代UI开发",
-                author = "开发者小王",
+                id = "v001",
+                title = "【视频1】视频1",
+                authorId = "u001",
+                authorName = "作者1",
                 publishTime = "2小时前",
                 likeCount = 128u,
                 commentCount = 45u,
                 isHot = true,
                 videoCover = "cover1",  // 对应 res/drawable/cover1.png
-                videoUrl = "video1"     // 对应 res/raw/video1.mp4
+                videoUrl = "video1",     // 对应 res/raw/video1.mp4
+                topics = emptyList()
             ),
-            Content(
-                id = "2",
+            Video(
+                id = "v002",
                 title = "Kotlin协程深入理解：掌握异步编程的核心概念",
-                author = "技术大牛",
+                authorId = "u002",
+                authorName = "技术大牛",
                 publishTime = "5小时前",
                 likeCount = 256u,
                 commentCount = 89u,
                 isHot = true,
-                videoCover = "cover2",  // 对应 res/drawable/cover2.png
-                videoUrl = "video2"      // 对应 res/raw/video2.mp4
+                videoCover = "cover2",
+                videoUrl = "video2",
+                topics = listOf("tech", "hot")
             ),
-            Content(
-                id = "3",
+            Video(
+                id = "v003",
                 title = "MVVM架构模式在Android开发中的最佳实践",
-                author = "架构师老李",
+                authorId = "u003",
+                authorName = "架构师老李",
                 publishTime = "1天前",
                 likeCount = 89u,
                 commentCount = 23u,
-                isHot = false
+                isHot = false,
+                topics = listOf("tech")
             ),
-            Content(
-                id = "4",
+            Video(
+                id = "v004",
                 title = "Material Design 3 设计规范详解",
-                author = "UI设计师",
+                authorId = "u004",
+                authorName = "UI设计师",
                 publishTime = "2天前",
                 likeCount = 156u,
                 commentCount = 34u,
-                isHot = false
+                isHot = false,
+                topics = listOf("tech")
             ),
-            Content(
-                id = "5",
+            Video(
+                id = "v005",
                 title = "Android性能优化：内存泄漏检测与修复",
-                author = "性能专家",
+                authorId = "u005",
+                authorName = "性能专家",
                 publishTime = "3小时前",
                 likeCount = 312u,
                 commentCount = 67u,
                 isHot = true,
-                videoCover = "cover5",  // 对应 res/drawable/cover5.png
-                videoUrl = "video5"      // 对应 res/raw/video5.mp4
+                videoCover = "cover5",
+                videoUrl = "video5",
+                topics = listOf("tech", "hot")
             ),
-            Content(
-                id = "6",
+            Video(
+                id = "v006",
                 title = "Room数据库使用指南：本地数据持久化方案",
-                author = "数据工程师",
+                authorId = "u006",
+                authorName = "数据工程师",
                 publishTime = "6小时前",
                 likeCount = 78u,
                 commentCount = 19u,
-                isHot = false
+                isHot = false,
+                topics = listOf("tech")
             ),
-            Content(
-                id = "7",
+            Video(
+                id = "v007",
                 title = "Retrofit网络请求框架实战：构建高效的API客户端",
-                author = "后端开发者",
+                authorId = "u007",
+                authorName = "后端开发者",
                 publishTime = "4小时前",
                 likeCount = 201u,
                 commentCount = 56u,
                 isHot = true,
-                videoCover = "cover7",  // 对应 res/drawable/cover7.png
-                videoUrl = "video7"      // 对应 res/raw/video7.mp4
+                videoCover = "cover7",
+                videoUrl = "video7",
+                topics = listOf("tech", "hot")
             ),
-            Content(
-                id = "8",
+            Video(
+                id = "v008",
                 title = "Compose状态管理：StateFlow vs LiveData",
-                author = "技术博主",
+                authorId = "u008",
+                authorName = "技术博主",
                 publishTime = "1天前",
                 likeCount = 134u,
                 commentCount = 42u,
-                isHot = false
+                isHot = false,
+                topics = listOf("tech")
             ),
-            Content(
-                id = "9",
+            Video(
+                id = "v009",
                 title = "Android动画效果实现：从基础到高级",
-                author = "动画设计师",
+                authorId = "u009",
+                authorName = "动画设计师",
                 publishTime = "8小时前",
                 likeCount = 167u,
                 commentCount = 38u,
-                isHot = false
+                isHot = false,
+                topics = listOf("tech")
             ),
-            Content(
-                id = "10",
+            Video(
+                id = "v010",
                 title = "Jetpack Navigation组件：实现流畅的页面导航",
-                author = "导航专家",
+                authorId = "u010",
+                authorName = "导航专家",
                 publishTime = "12小时前",
                 likeCount = 98u,
                 commentCount = 25u,
-                isHot = false
+                isHot = false,
+                topics = listOf("tech")
             ),
-            Content(
-                id = "11",
+            Video(
+                id = "v011",
                 title = "Android安全开发：数据加密与权限管理",
-                author = "安全专家",
+                authorId = "u011",
+                authorName = "安全专家",
                 publishTime = "1天前",
                 likeCount = 245u,
                 commentCount = 71u,
-                isHot = true
+                isHot = true,
+                topics = listOf("tech", "hot")
             ),
-            Content(
-                id = "12",
+            Video(
+                id = "v012",
                 title = "Kotlin DSL构建Gradle脚本：提升构建效率",
-                author = "构建工程师",
+                authorId = "u012",
+                authorName = "构建工程师",
                 publishTime = "2天前",
                 likeCount = 112u,
                 commentCount = 29u,
-                isHot = false
+                isHot = false,
+                topics = listOf("tech")
             )
         )
     }
 }
-
