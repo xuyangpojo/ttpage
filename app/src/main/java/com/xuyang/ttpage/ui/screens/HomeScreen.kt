@@ -8,6 +8,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +36,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.ui.graphics.Color
 // PullRefresh API may not be available in this Material3 version
 // import androidx.compose.material3.pullrefresh.PullRefreshIndicator
 // import androidx.compose.material3.pullrefresh.pullRefresh
@@ -55,6 +62,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * 5. 顶部话题切换（左右滑动）
  * 6. 下拉刷新和上拉加载更多
  */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -73,7 +81,114 @@ fun HomeScreen(
     val topics by topicViewModel.topics.collectAsState()
     val selectedTopicId by topicViewModel.selectedTopicId.collectAsState()
     
-    // 创建两个LazyListState，使用共享的滚动偏移量实现同步滚动
+    // 找到当前选中topic的索引
+    val selectedTopicIndex = remember(selectedTopicId, topics) {
+        topics.indexOfFirst { it.id == selectedTopicId }.coerceAtLeast(0)
+    }
+    
+    // 创建HorizontalPager状态，用于左右滑动切换topic
+    val pagerState = rememberPagerState(
+        initialPage = selectedTopicIndex,
+        pageCount = { topics.size.coerceAtLeast(1) }
+    )
+    
+    
+    // 下拉刷新状态 - 暂时禁用，因为 pullrefresh API 可能不可用
+    // val pullRefreshState = rememberPullRefreshState(
+    //     refreshing = isLoading && videos.isNotEmpty(),
+    //     onRefresh = { viewModel.refreshVideos() }
+    // )
+    
+    // 当HorizontalPager页面变化时，切换topic
+    LaunchedEffect(pagerState.currentPage) {
+        val currentPage = pagerState.currentPage
+        if (currentPage < topics.size) {
+            val topicId = topics[currentPage].id
+            if (topicId != selectedTopicId) {
+                topicViewModel.selectTopic(topicId)
+            }
+        }
+    }
+    
+    // 当选中topic变化时，同步HorizontalPager页面
+    LaunchedEffect(selectedTopicId) {
+        val index = topics.indexOfFirst { it.id == selectedTopicId }
+        if (index >= 0 && index != pagerState.currentPage) {
+            pagerState.animateScrollToPage(index)
+        }
+    }
+    
+    // 话题切换时刷新内容
+    LaunchedEffect(selectedTopicId) {
+        if (selectedTopicId != currentTopicId) {
+            viewModel.loadVideos(selectedTopicId, refresh = true)
+        }
+    }
+    
+    // 返回顶部功能
+    LaunchedEffect(scrollToTopTrigger) {
+        if (scrollToTopTrigger > 0) {
+            onRefreshRequest()
+        }
+    }
+    
+    Column(modifier = modifier.fillMaxSize()) {
+        // 话题切换栏
+        TopicTabs(
+            topics = topics,
+            selectedTopicId = selectedTopicId,
+            onTopicSelected = { topicId ->
+                topicViewModel.selectTopic(topicId)
+            }
+        )
+        
+        // 使用HorizontalPager实现左右滑动切换topic
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize(),
+            key = { index -> topics.getOrNull(index)?.id ?: index }
+        ) { page ->
+            val currentTopic = topics.getOrNull(page)
+            if (currentTopic != null) {
+                // 为每个topic加载对应的视频
+                LaunchedEffect(currentTopic.id) {
+                    if (currentTopic.id != currentTopicId) {
+                        viewModel.loadVideos(currentTopic.id, refresh = true)
+                    }
+                }
+                
+                // 显示当前topic的视频列表
+                TopicVideoContent(
+                    topicId = currentTopic.id,
+                    videos = if (currentTopic.id == currentTopicId) videos else emptyList(),
+                    isLoading = isLoading && currentTopic.id == currentTopicId,
+                    hasMore = hasMore && currentTopic.id == currentTopicId,
+                    onVideoClick = onVideoClick,
+                    onLoadMore = {
+                        if (currentTopic.id == currentTopicId) {
+                            viewModel.loadMoreVideos()
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Topic视频内容组件（双列布局）
+ */
+@Composable
+fun TopicVideoContent(
+    topicId: String,
+    videos: List<Video>,
+    isLoading: Boolean,
+    hasMore: Boolean,
+    onVideoClick: (Video) -> Unit,
+    onLoadMore: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // 为每个topic创建独立的滚动状态
     val leftListState = rememberLazyListState()
     val rightListState = rememberLazyListState()
     
@@ -144,130 +259,101 @@ fun HomeScreen(
         }
     }
     
-    // 下拉刷新状态 - 暂时禁用，因为 pullrefresh API 可能不可用
-    // val pullRefreshState = rememberPullRefreshState(
-    //     refreshing = isLoading && videos.isNotEmpty(),
-    //     onRefresh = { viewModel.refreshVideos() }
-    // )
-    
-    // 话题切换时刷新内容
-    LaunchedEffect(selectedTopicId) {
-        if (selectedTopicId != currentTopicId) {
-            viewModel.loadVideos(selectedTopicId, refresh = true)
-            leftListState.animateScrollToItem(0)
-            rightListState.animateScrollToItem(0)
-        }
-    }
-    
-    // 返回顶部功能
-    LaunchedEffect(scrollToTopTrigger) {
-        if (scrollToTopTrigger > 0) {
-            leftListState.animateScrollToItem(0)
-            rightListState.animateScrollToItem(0)
-            onRefreshRequest()
-        }
-    }
-    
     // 检测滚动到底部，加载更多
-    LaunchedEffect(leftListState, rightListState) {
-        val leftLastVisible = leftListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-        val rightLastVisible = rightListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-        val leftTotal = leftListState.layoutInfo.totalItemsCount
-        val rightTotal = rightListState.layoutInfo.totalItemsCount
-        
-        if ((leftLastVisible >= leftTotal - 2 || rightLastVisible >= rightTotal - 2) && hasMore && !isLoading) {
-            viewModel.loadMoreVideos()
+    LaunchedEffect(leftListState, rightListState, hasMore, isLoading) {
+        snapshotFlow {
+            val leftLastVisible = leftListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            val rightLastVisible = rightListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+            val leftTotal = leftListState.layoutInfo.totalItemsCount
+            val rightTotal = rightListState.layoutInfo.totalItemsCount
+            Pair(Pair(leftLastVisible, rightLastVisible), Pair(leftTotal, rightTotal))
+        }
+        .collect { (indices, totals) ->
+            val (leftLastVisible, rightLastVisible) = indices
+            val (leftTotal, rightTotal) = totals
+            if ((leftLastVisible >= leftTotal - 2 || rightLastVisible >= rightTotal - 2) && hasMore && !isLoading) {
+                onLoadMore()
+            }
         }
     }
     
-    Column(modifier = modifier.fillMaxSize()) {
-        // 话题切换栏
-        TopicTabs(
-            topics = topics,
-            selectedTopicId = selectedTopicId,
-            onTopicSelected = { topicId ->
-                topicViewModel.selectTopic(topicId)
-            }
-        )
-        
-        if (isLoading && videos.isEmpty()) {
-            // 加载中显示
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
+    if (isLoading && videos.isEmpty()) {
+        // 加载中显示
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator()
+        }
+    } else {
+        // 双列布局（使用两个LazyColumn，通过同步滚动实现整体滚动效果）
+        Box(
+            modifier = modifier.fillMaxSize()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp)
             ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            // 双列布局（使用两个LazyColumn，通过同步滚动实现整体滚动效果）
-            Box(
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Row(
+                // 左列
+                LazyColumn(
+                    state = leftListState,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 8.dp)
+                        .weight(1f)
+                        .padding(end = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    userScrollEnabled = true
                 ) {
-                    // 左列
-                    LazyColumn(
-                        state = leftListState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(end = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp),
-                        userScrollEnabled = true
-                    ) {
-                        itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 0 }) { _, video ->
-                            VideoCard(
-                                video = video,
-                                onClick = { onVideoClick(video) }
-                            )
-                        }
-                        
-                        // 加载更多指示器
-                        if (isLoading && videos.isNotEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                }
+                    itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 0 }) { _, video ->
+                        VideoCard(
+                            video = video,
+                            onClick = { onVideoClick(video) }
+                        )
+                    }
+                    
+                    // 加载更多指示器
+                    if (isLoading && videos.isNotEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
                             }
                         }
                     }
+                }
+                
+                // 右列（可以滚动，通过同步实现与左列一起滚动）
+                LazyColumn(
+                    state = rightListState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 4.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                    userScrollEnabled = true
+                ) {
+                    itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 1 }) { _, video ->
+                        VideoCard(
+                            video = video,
+                            onClick = { onVideoClick(video) }
+                        )
+                    }
                     
-                    // 右列（可以滚动，通过同步实现与左列一起滚动）
-                    LazyColumn(
-                        state = rightListState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(vertical = 8.dp),
-                        userScrollEnabled = true  // 恢复右列的滚动能力
-                    ) {
-                        itemsIndexed(videos.filterIndexed { index, _ -> index % 2 == 1 }) { _, video ->
-                            VideoCard(
-                                video = video,
-                                onClick = { onVideoClick(video) }
-                            )
-                        }
-                        
-                        // 加载更多指示器
-                        if (isLoading && videos.isNotEmpty()) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                                }
+                    // 加载更多指示器
+                    if (isLoading && videos.isNotEmpty()) {
+                        item {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
                             }
                         }
                     }
@@ -374,8 +460,8 @@ fun VideoCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(4.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             // 视频封面（如果有）- 自适应布局
             if (video.hasVideo && !video.videoCover.isNullOrBlank()) {
@@ -429,7 +515,7 @@ fun VideoCard(
                             contentScale = ContentScale.Crop
                         )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(1.dp))
                 }
             }
             
@@ -438,11 +524,11 @@ fun VideoCard(
                 text = video.title,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                maxLines = 3,
-                lineHeight = 20.sp
+                maxLines = 2,
+                lineHeight = 16.sp
             )
             
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(1.dp))
             
             // 作者和发布时间
             Row(
@@ -471,14 +557,14 @@ fun VideoCard(
                 // 热门标签
                 if (video.isHot) {
                     Surface(
-                        color = MaterialTheme.colorScheme.errorContainer,
+                        color = Color(0xFFFF6B35), // 橘红色背景
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
                             text = "热门",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            color = Color(0xFFFFFFFF) // 白色文字
                         )
                     }
                 } else {
@@ -493,9 +579,11 @@ fun VideoCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = "👍",
-                            fontSize = 14.sp
+                        Icon(
+                            imageVector = Icons.Default.FavoriteBorder,
+                            contentDescription = "点赞",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "${video.likeCount}",
@@ -508,9 +596,11 @@ fun VideoCard(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Text(
-                            text = "💬",
-                            fontSize = 14.sp
+                        Icon(
+                            imageVector = Icons.Default.Comment,
+                            contentDescription = "评论",
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "${video.commentCount}",

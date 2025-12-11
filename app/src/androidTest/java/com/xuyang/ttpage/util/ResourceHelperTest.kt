@@ -12,7 +12,7 @@ class ResourceHelperTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     
     @Test
-    fun `getRawResourceUri should return valid URI format`() {
+    fun testGetRawResourceUri_shouldReturnValidUriFormat() {
         // Given
         val resourceName = "video1"
         
@@ -21,12 +21,14 @@ class ResourceHelperTest {
         
         // Then
         assertNotNull(uri)
-        assertTrue(uri.startsWith("android.resource://"))
-        assertTrue(uri.contains(context.packageName))
+        uri?.let {
+            assertTrue(it.startsWith("android.resource://"))
+            assertTrue(it.contains(context.packageName))
+        }
     }
     
     @Test
-    fun `getDrawableResourceUri should return valid URI format`() {
+    fun testGetDrawableResourceUri_shouldReturnValidUriFormat() {
         // Given
         val resourceName = "ic_launcher_foreground"
         
@@ -35,12 +37,14 @@ class ResourceHelperTest {
         
         // Then
         assertNotNull(uri)
-        assertTrue(uri.startsWith("android.resource://"))
-        assertTrue(uri.contains(context.packageName))
+        uri?.let {
+            assertTrue(it.startsWith("android.resource://"))
+            assertTrue(it.contains(context.packageName))
+        }
     }
     
     @Test
-    fun `getRawResourceUri should handle non-existent resource gracefully`() {
+    fun testGetRawResourceUri_shouldHandleNonExistentResourceGracefully() {
         // Given
         val nonExistentResource = "non_existent_resource_12345"
         

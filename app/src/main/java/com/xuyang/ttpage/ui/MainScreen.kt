@@ -1,9 +1,10 @@
 package com.xuyang.ttpage.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.xuyang.ttpage.navigation.NavGraph
 import com.xuyang.ttpage.navigation.Screen
@@ -21,6 +22,7 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val homeViewModel: HomeViewModel = viewModel()
+    
     var scrollToTopTrigger by remember { mutableIntStateOf(0) }
     
     // 获取当前路由（通过监听导航变化）
@@ -35,8 +37,9 @@ fun MainScreen(
             currentRoute = destination.route ?: Screen.Home.route
         }
     }
-    
+
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background, // 使用深色背景
         bottomBar = {
             // 只在首页和我的页面显示底部导航栏
             if (currentRoute == Screen.Home.route || currentRoute == Screen.Profile.route) {

@@ -3,20 +3,23 @@ package com.xuyang.ttpage.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.*
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
@@ -27,8 +30,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xuyang.ttpage.model.data.Video
-import com.xuyang.ttpage.ui.components.CommentSection
 import com.xuyang.ttpage.ui.components.VideoPlayer
+import com.xuyang.ttpage.ui.components.CommentSection
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
@@ -50,15 +53,6 @@ fun DetailScreen(
     homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    
-    LaunchedEffect(video.id) {
-        try {
-            Log.d("DetailScreen", "进入详情页 - videoId: ${video.id}, title: ${video.title}")
-        } catch (e: Exception) {
-            Log.e("DetailScreen", "初始化时出错", e)
-            errorMessage = e.message
-        }
-    }
     
     if (errorMessage != null) {
         Surface(
@@ -89,18 +83,10 @@ fun DetailScreen(
     }
     
     val videos = homeViewModel.videos.collectAsState().value
-    Log.d("DetailScreen", "视频列表大小: ${videos.size}")
     
     // 找到当前视频在列表中的索引
     val currentIndex = remember(video.id) {
-        try {
-            val index = videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
-            Log.d("DetailScreen", "当前视频索引: $index")
-            index
-        } catch (e: Exception) {
-            Log.e("DetailScreen", "计算索引时出错", e)
-            0
-        }
+        videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
     }
     
     // 创建垂直Pager状态
@@ -111,38 +97,17 @@ fun DetailScreen(
     
     // 当视频列表变化时，更新页面数量
     LaunchedEffect(videos.size) {
-        try {
-            val pageCount = videos.size.coerceAtLeast(1)
-            if (pagerState.pageCount != pageCount) {
-                // 如果当前页面超出范围，跳转到最后一页
-                val targetPage = currentIndex.coerceIn(0, videos.size - 1)
-                if (targetPage != pagerState.currentPage) {
-                    pagerState.animateScrollToPage(targetPage)
-                }
+        val pageCount = videos.size.coerceAtLeast(1)
+        if (pagerState.pageCount != pageCount) {
+            // 如果当前页面超出范围，跳转到最后一页
+            val targetPage = currentIndex.coerceIn(0, videos.size - 1)
+            if (targetPage != pagerState.currentPage) {
+                pagerState.animateScrollToPage(targetPage)
             }
-        } catch (e: Exception) {
-            Log.e("DetailScreen", "更新页面数量时出错", e)
         }
     }
     
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = "视频详情 (${pagerState.currentPage + 1}/${videos.size})"
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "返回"
-                        )
-                    }
-                }
-            )
-        }
     ) { paddingValues ->
         // 使用VerticalPager实现上下切换
         VerticalPager(
@@ -153,7 +118,6 @@ fun DetailScreen(
             key = { index -> videos.getOrNull(index)?.id ?: index }
         ) { page ->
             val currentVideo = videos.getOrNull(page) ?: video
-            Log.d("DetailScreen", "显示页面 $page，视频ID: ${currentVideo.id}")
             
             DetailVideoPage(
                 video = currentVideo,
@@ -174,6 +138,7 @@ fun DetailVideoPage(
     val context = LocalContext.current
     var isLiked by remember { mutableStateOf(false) }
     var likeCount by remember { mutableStateOf(video.likeCount) }
+    var showComments by remember { mutableStateOf(false) }
     
     // 复制链接到剪贴板
     fun copyLinkToClipboard() {
@@ -189,241 +154,225 @@ fun DetailVideoPage(
         likeCount = if (isLiked) likeCount + 1u else (likeCount - 1u).coerceAtLeast(0u)
     }
     
-    Column(
-        modifier = modifier
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    // 抖音/TikTok风格：视频全屏，右侧半透明信息栏
+    Box(
+        modifier = modifier.fillMaxSize()
     ) {
-            // 标题
-            Text(
-                text = "标题",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        // 视频播放器 - 全屏显示
+        if (video.hasVideo && !video.videoUrl.isNullOrBlank()) {
+            VideoPlayer(
+                videoUrl = video.videoUrl!!,
+                modifier = Modifier.fillMaxSize()
             )
-            Text(
-                text = video.title,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            // 视频播放器（如果有视频）
-            if (video.hasVideo && !video.videoUrl.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                var playerError by remember { mutableStateOf<String?>(null) }
-                
-                LaunchedEffect(video.videoUrl) {
-                    try {
-                        Log.d("DetailVideoPage", "准备加载视频播放器 - videoUrl: ${video.videoUrl}")
-                    } catch (e: Exception) {
-                        Log.e("DetailVideoPage", "加载视频播放器失败", e)
-                        playerError = e.message
-                    }
-                }
-                
-                if (playerError != null) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "视频加载失败",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = playerError ?: "未知错误",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                } else {
-                    VideoPlayer(
-                        videoUrl = video.videoUrl ?: "",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp)
-                    )
-                }
-                Divider()
-            }
-            
-            Divider()
-            
-            // ID
-            Text(
-                text = "ID",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = video.id,
-                style = MaterialTheme.typography.bodyLarge
-            )
-            
-            Divider()
-            
-            // 作者
-            Text(
-                text = "作者",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = video.authorName,
-                style = MaterialTheme.typography.bodyLarge
-            )
-            
-            Divider()
-            
-            // 发布时间
-            Text(
-                text = "发布时间",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = video.publishTime,
-                style = MaterialTheme.typography.bodyLarge
-            )
-            
-            Divider()
-            
-            // 操作按钮（点赞、转发）
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+        } else {
+            // 没有视频时显示占位符
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                // 点赞按钮
-                Row(
+                Text(
+                    text = "暂无视频",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        // 右侧半透明信息栏
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 8.dp, bottom = 76.dp)
+                .width(80.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // 点赞按钮和数量
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                IconButton(
+                    onClick = { toggleLike() },
                     modifier = Modifier
-                        .weight(1f)
-                        .clickable { toggleLike() },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            shape = CircleShape
+                        )
+                        .size(48.dp)
                 ) {
                     Icon(
                         imageVector = if (isLiked) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "点赞",
-                        tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "$likeCount",
-                        style = MaterialTheme.typography.bodyMedium
+                        tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-                
-                // 转发按钮（复制链接）
-                Row(
+                Text(
+                    text = formatCount(likeCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
-                        .weight(1f)
-                        .clickable { copyLinkToClipboard() },
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            shape = MaterialTheme.shapes.small
+                        )
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+            
+            // 评论按钮和数量
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                IconButton(
+                    onClick = { showComments = !showComments },
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            shape = CircleShape
+                        )
+                        .size(48.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Share,
-                        contentDescription = "转发"
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = "转发",
-                        style = MaterialTheme.typography.bodyMedium
+                        imageVector = Icons.Default.Comment,
+                        contentDescription = "评论",
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
-            }
-            
-            Divider()
-            
-            // 点赞数和评论数（显示）
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
                 Text(
-                    text = "点赞数: $likeCount",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                    text = "评论数: ${video.commentCount}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            
-            Divider()
-            
-            // 是否热门
-            Text(
-                text = "是否热门",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Surface(
-                color = if (video.isHot) 
-                    MaterialTheme.colorScheme.errorContainer 
-                else 
-                    MaterialTheme.colorScheme.surfaceVariant,
-                shape = MaterialTheme.shapes.small
-            ) {
-                Text(
-                    text = if (video.isHot) "是" else "否",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = if (video.isHot) 
-                        MaterialTheme.colorScheme.onErrorContainer 
-                    else 
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            Divider()
-            
-            // 完整实体信息（字符串形式）
-            Text(
-                text = "完整实体信息",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Text(
-                    text = """
-                        Video(
-                            id = "${video.id}",
-                            title = "${video.title}",
-                            authorId = "${video.authorId}",
-                            authorName = "${video.authorName}",
-                            publishTime = "${video.publishTime}",
-                            likeCount = ${video.likeCount},
-                            commentCount = ${video.commentCount},
-                            isHot = ${video.isHot},
-                            videoCover = ${video.videoCover?.let { "\"$it\"" } ?: "null"},
-                            videoUrl = ${video.videoUrl?.let { "\"$it\"" } ?: "null"},
-                            topics = ${video.topics}
+                    text = formatCount(video.commentCount),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier
+                        .background(
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                            shape = MaterialTheme.shapes.small
                         )
-                    """.trimIndent(),
-                    modifier = Modifier.padding(16.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    lineHeight = 20.sp
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
                 )
             }
             
-            Divider()
-            
-            // 评论区
-            CommentSection(videoId = video.id)
+            // 转发按钮
+            IconButton(
+                onClick = { copyLinkToClipboard() },
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    )
+                    .size(48.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Share,
+                    contentDescription = "转发",
+                    tint = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+        
+        // 底部作者信息
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 16.dp, bottom = 60.dp)
+                .fillMaxWidth(0.7f)
+        ) {
+            Text(
+                text = "@${video.authorName}",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                        shape = MaterialTheme.shapes.small
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = video.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                        shape = MaterialTheme.shapes.small
+                    )
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            )
+        }
+        
+        // 评论区弹窗
+        if (showComments) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.95f))
+                    .clickable { showComments = false }
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.7f)
+                        .clickable(enabled = false) { },
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        // 评论区标题栏
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "评论区",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            IconButton(onClick = { showComments = false }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "关闭"
+                                )
+                            }
+                        }
+                        
+                        // 评论区内容 - 可滚动
+                        val scrollState = rememberScrollState()
+                        CommentSection(
+                            videoId = video.id,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(horizontal = 16.dp)
+                                .verticalScroll(scrollState)
+                        )
+                    }
+                }
+            }
         }
     }
+}
+
+// 格式化数字显示（如：1000 -> 1K, 1000000 -> 1M）
+private fun formatCount(count: UInt): String {
+    return when {
+        count >= 1_000_000u -> "${count / 1_000_000u}M"
+        count >= 1_000u -> "${count / 1_000u}K"
+        else -> count.toString()
+    }
+}
 

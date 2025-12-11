@@ -1,6 +1,5 @@
 package com.xuyang.ttpage.navigation
 
-import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
@@ -12,6 +11,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.ui.screens.*
 import com.xuyang.ttpage.viewmodel.HomeViewModel
@@ -38,18 +39,19 @@ fun NavGraph(
         modifier = modifier
     ) {
         // 菜单栏1: 首页
-        composable(Screen.Home.route) {
+        composable(
+            route = Screen.Home.route,
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
+        ) {
             HomeScreen(
                 viewModel = homeViewModel,
                 topicViewModel = topicViewModel,
                 onVideoClick = { video ->
-                    try {
-                        Log.d("NavGraph", "点击视频，准备导航 - videoId: ${video.id}, title: ${video.title}")
-                        navController.navigate("detail/${video.id}") {
-                            launchSingleTop = true
-                        }
-                    } catch (e: Exception) {
-                        Log.e("NavGraph", "导航失败", e)
+                    navController.navigate("detail/${video.id}") {
+                        launchSingleTop = true
                     }
                 },
                 onRefreshRequest = {
@@ -99,48 +101,25 @@ fun NavGraph(
         }
         // 视频 - 详情
         composable(
-            route = "detail/{videoId}"
+            route = "detail/{videoId}",
+            enterTransition = { EnterTransition.None },
+            exitTransition = { ExitTransition.None },
+            popEnterTransition = { EnterTransition.None },
+            popExitTransition = { ExitTransition.None }
         ) { backStackEntry ->
-            val videoId = try {
-                backStackEntry.arguments?.getString(Screen.VIDEO_ID_ARG) ?: ""
-            } catch (e: Exception) {
-                Log.e("NavGraph", "获取videoId失败", e)
-                ""
-            }
+            val videoId = backStackEntry.arguments?.getString(Screen.VIDEO_ID_ARG) ?: ""
             
-            Log.d("NavGraph", "导航到视频详情页，videoId: $videoId")
-            
-            val video = try {
-                homeViewModel.getVideoById(videoId) ?: run {
-                    Log.w("NavGraph", "未找到视频，videoId: $videoId，创建默认视频对象")
-                    Video(
-                        id = videoId,
-                        title = "视频不存在",
-                        authorId = "unknown",
-                        authorName = "未知",
-                        publishTime = "未知",
-                        likeCount = 0u,
-                        commentCount = 0u,
-                        isHot = false,
-                        topics = emptyList()
-                    )
-                }
-            } catch (e: Exception) {
-                Log.e("NavGraph", "获取视频失败", e)
-                Video(
-                    id = videoId,
-                    title = "加载失败",
-                    authorId = "unknown",
-                    authorName = "未知",
-                    publishTime = "未知",
-                    likeCount = 0u,
-                    commentCount = 0u,
-                    isHot = false,
-                    topics = emptyList()
-                )
-            }
-            
-            Log.d("NavGraph", "视频信息 - id: ${video.id}, title: ${video.title}, videoUrl: ${video.videoUrl}")
+            val video = homeViewModel.getVideoById(videoId) ?: Video(
+                id = videoId,
+                title = "视频不存在",
+                authorId = "unknown",
+                authorName = "未知",
+                publishTime = "未知",
+                likeCount = 0u,
+                commentCount = 0u,
+                isHot = false,
+                topics = emptyList()
+            )
             
             DetailScreen(
                 video = video,

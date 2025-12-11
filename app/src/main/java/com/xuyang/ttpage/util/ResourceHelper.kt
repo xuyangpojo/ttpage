@@ -13,16 +13,21 @@ import androidx.compose.ui.platform.LocalContext
  */
 object ResourceHelper {
     fun getRawResourceUri(context: Context, resourceName: String): String? {
-        val resourceId = context.resources.getIdentifier(
-            resourceName,
-            "raw",
-            context.packageName
-        )
-        // 如果资源不存在，getIdentifier返回0，此时返回null
-        return if (resourceId != 0) {
-            "android.resource://${context.packageName}/$resourceId"
-        } else {
-            null
+        try {
+            val resourceId = context.resources.getIdentifier(
+                resourceName,
+                "raw",
+                context.packageName
+            )
+            
+            // 如果资源不存在，getIdentifier返回0，此时返回null
+            return if (resourceId != 0) {
+                "android.resource://${context.packageName}/$resourceId"
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            return null
         }
     }
     

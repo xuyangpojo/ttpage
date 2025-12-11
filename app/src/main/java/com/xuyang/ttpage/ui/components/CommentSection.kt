@@ -1,21 +1,28 @@
 package com.xuyang.ttpage.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
 import com.xuyang.ttpage.model.data.Comment
 import com.xuyang.ttpage.model.data.CommentWithReplies
 import com.xuyang.ttpage.viewmodel.CommentViewModel
@@ -54,11 +61,13 @@ fun CommentSection(
         if (isLoading && commentsWithReplies.isEmpty()) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp))
         } else {
-            LazyColumn(
+            // 注意：不能使用 LazyColumn，因为 CommentSection 在 VerticalPager 中
+            // 使用普通的 Column 来显示评论列表
+            Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                items(commentsWithReplies) { commentWithReplies ->
+                commentsWithReplies.forEach { commentWithReplies ->
                     val commentId = commentWithReplies.comment.id.toString()
                     CommentItem(
                         commentWithReplies = commentWithReplies,
@@ -130,11 +139,21 @@ fun CommentItem(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = comment.authorName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 用户头像
+                    UserAvatar(
+                        authorId = comment.authorId,
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Text(
+                        text = comment.authorName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 Text(
                     text = comment.publishTime,
                     style = MaterialTheme.typography.bodySmall,
@@ -174,7 +193,7 @@ fun CommentItem(
                     modifier = Modifier.clickable { onReplyClick(comment.id.toString()) }
                 ) {
                     Text(
-                        text = if (comment.replyCount > 0u) "${comment.replyCount.toInt()}" else "回复",
+                        text = if (comment.replyCount > 0u) "${comment.replyCount.toInt()}条回复" else "回复",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -226,13 +245,24 @@ fun ReplyItem(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = reply.authorName,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 用户头像
+                    UserAvatar(
+                        authorId = reply.authorId,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        text = reply.authorName,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
                 Text(
                     text = reply.publishTime,
                     style = MaterialTheme.typography.bodySmall,
@@ -343,6 +373,73 @@ fun ReplyInput(
                     contentDescription = "发送"
                 )
             }
+        }
+    }
+}
+
+/**
+ * 用户头像组件
+ * 
+ * 头像文件放置位置：
+ * - 路径：app/src/main/res/drawable/
+ * - 命名规则：avatar_{authorId}.png
+ *   例如：authorId为"u101"的用户，头像文件名为"avatar_u101.png"
+ * 
+ * 使用说明：
+ * 1. 将用户头像PNG文件放在 app/src/main/res/drawable/ 目录下
+ * 2. 文件名必须遵循命名规则：avatar_{authorId}.png
+ * 3. 文件名必须是小写字母、数字和下划线，不能包含空格和特殊字符
+ * 4. 如果找不到对应的头像文件，将显示默认头像（Person图标）
+ * 
+ * 示例：
+ * - 用户ID: u101 -> 头像文件: avatar_u101.png
+ * - 用户ID: u102 -> 头像文件: avatar_u102.png
+ */
+@Composable
+fun UserAvatar(
+    authorId: String,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    
+    // 尝试根据authorId查找头像资源
+    val avatarResourceId = remember(authorId) {
+        try {
+            val resourceName = "avatar_$authorId"
+            context.resources.getIdentifier(
+                resourceName,
+                "drawable",
+                context.packageName
+            )
+        } catch (e: Exception) {
+            0
+        }
+    }
+    
+    // 如果找到头像资源，显示头像图片；否则显示默认头像
+    if (avatarResourceId != 0) {
+        Image(
+            painter = painterResource(id = avatarResourceId),
+            contentDescription = "用户头像",
+            modifier = modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentScale = ContentScale.Crop
+        )
+    } else {
+        // 默认头像：使用Person图标
+        Box(
+            modifier = modifier
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "默认头像",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(16.dp)
+            )
         }
     }
 }

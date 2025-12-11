@@ -1,10 +1,11 @@
 package com.xuyang.ttpage.ui.components
 
-import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.filled.PlayArrow
@@ -22,8 +23,8 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.xuyang.ttpage.util.ResourceHelper
 import kotlinx.coroutines.delay
-import android.media.AudioManager
-import android.content.Context
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 /**
  * VideoPlayer 视频播放器组件
@@ -45,82 +46,96 @@ fun VideoPlayer(
     
     val videoUri = remember(videoUrl) {
         try {
-            Log.d("VideoPlayer", "处理视频URL: $videoUrl")
             if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://") || videoUrl.startsWith("android.resource://")) {
-                Log.d("VideoPlayer", "使用原始URL: $videoUrl")
                 videoUrl
             } else {
-                val uri = ResourceHelper.getRawResourceUri(context, videoUrl)
-                if (uri != null) {
-                    Log.d("VideoPlayer", "找到资源URI: $uri")
-                } else {
-                    Log.w("VideoPlayer", "未找到资源: $videoUrl")
-                }
-                uri
+                ResourceHelper.getRawResourceUri(context, videoUrl)
             }
         } catch (e: Exception) {
-            Log.e("VideoPlayer", "处理视频URL时出错", e)
             null
         }
     }
     
     var playerError by remember { mutableStateOf<String?>(null) }
-    var exoPlayer: ExoPlayer? by remember(videoUri) {
-        mutableStateOf(null)
-    }
     
     // 验证资源是否存在
     val isValidResource = remember(videoUri) {
-        val isValid = videoUri != null && videoUri.isNotEmpty() && (
+        videoUri != null && videoUri.isNotEmpty() && (
             videoUri.startsWith("http://") || 
             videoUri.startsWith("https://") || 
             videoUri.startsWith("android.resource://")
         )
-        Log.d("VideoPlayer", "资源验证结果: isValid=$isValid, videoUri=$videoUri")
-        isValid
+    }
+    
+    // 使用 DisposableEffect 来管理 ExoPlayer 的生命周期
+    val exoPlayer = remember {
+        mutableStateOf<ExoPlayer?>(null)
     }
     
     // 初始化ExoPlayer
     LaunchedEffect(videoUri) {
+        // 先释放旧的播放器
+        exoPlayer.value?.release()
+        exoPlayer.value = null
+        playerError = null
+        
         if (videoUri == null || videoUri.isEmpty()) {
-            val errorMsg = "视频资源不存在: $videoUrl"
-            Log.w("VideoPlayer", errorMsg)
-            playerError = errorMsg
+            playerError = "视频资源不存在: $videoUrl"
             return@LaunchedEffect
         }
         
         if (!isValidResource) {
-            val errorMsg = "视频资源格式无效: $videoUri"
-            Log.w("VideoPlayer", errorMsg)
-            playerError = errorMsg
+            playerError = "视频资源格式无效: $videoUri"
             return@LaunchedEffect
         }
         
         try {
-            Log.d("VideoPlayer", "开始初始化ExoPlayer，URI: $videoUri")
-            val player = ExoPlayer.Builder(context).build().apply {
-                val mediaItem = MediaItem.fromUri(videoUri)
-                setMediaItem(mediaItem)
-                prepare()
-                playWhenReady = false
-                repeatMode = Player.REPEAT_MODE_OFF
+            // 先验证 URI 是否有效
+            val uri = android.net.Uri.parse(videoUri)
+            if (uri == null) {
+                throw IllegalArgumentException("无效的URI: $videoUri")
+            }
+            
+            val player = ExoPlayer.Builder(context).build()
+            
+            try {
+                val mediaItem = MediaItem.fromUri(uri)
+                player.setMediaItem(mediaItem)
+                player.prepare()
+                player.playWhenReady = true  // 自动播放
+                player.repeatMode = Player.REPEAT_MODE_OFF
                 
                 // 添加错误监听
-                addListener(object : Player.Listener {
+                player.addListener(object : Player.Listener {
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-                        Log.e("VideoPlayer", "播放器错误", error)
                         playerError = "播放错误: ${error.message}"
                     }
                 })
+                
+                exoPlayer.value = player
+                onPlayerReady(player)
+            } catch (e: Exception) {
+                try {
+                    player.release()
+                } catch (releaseError: Exception) {
+                    // 忽略释放错误
+                }
+                throw e
             }
-            exoPlayer = player
-            Log.d("VideoPlayer", "ExoPlayer初始化成功")
-            onPlayerReady(player)
         } catch (e: Exception) {
-            val errorMsg = "视频加载失败: ${e.message}"
-            Log.e("VideoPlayer", errorMsg, e)
-            playerError = errorMsg
-            e.printStackTrace()
+            playerError = "视频加载失败: ${e.message}"
+        }
+    }
+    
+    // 确保在组件销毁时释放播放器
+    DisposableEffect(Unit) {
+        onDispose {
+            try {
+                exoPlayer.value?.release()
+                exoPlayer.value = null
+            } catch (e: Exception) {
+                // 忽略释放错误
+            }
         }
     }
     
@@ -129,23 +144,17 @@ fun VideoPlayer(
     var duration by remember { mutableStateOf(0L) }
     var playbackSpeed by remember { mutableStateOf(1f) }
     var showSpeedMenu by remember { mutableStateOf(false) }
-    var showVolumeControl by remember { mutableStateOf(false) }
-    
-    val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
-    var currentVolume by remember { mutableIntStateOf(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)) }
-    val maxVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) }
     
     // 更新播放状态
-    LaunchedEffect(exoPlayer) {
-        val player = exoPlayer ?: return@LaunchedEffect
-        while (player == exoPlayer) {
+    LaunchedEffect(exoPlayer.value) {
+        val player = exoPlayer.value ?: return@LaunchedEffect
+        while (player == exoPlayer.value) {
             try {
                 isPlaying = player.isPlaying
                 currentPosition = player.currentPosition
                 duration = if (player.duration > 0) player.duration else 0L
                 playbackSpeed = player.playbackParameters.speed
             } catch (e: Exception) {
-                Log.e("VideoPlayer", "更新播放状态时出错", e)
                 playerError = "播放器错误: ${e.message}"
                 break
             }
@@ -153,19 +162,8 @@ fun VideoPlayer(
         }
     }
     
-    DisposableEffect(exoPlayer) {
-        onDispose {
-            try {
-                Log.d("VideoPlayer", "释放ExoPlayer")
-                exoPlayer?.release()
-            } catch (e: Exception) {
-                Log.e("VideoPlayer", "释放ExoPlayer时出错", e)
-            }
-        }
-    }
-    
     // 如果资源无效或加载失败，显示错误信息
-    if (!isValidResource || playerError != null || exoPlayer == null) {
+    if (!isValidResource || playerError != null || exoPlayer.value == null) {
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -192,7 +190,10 @@ fun VideoPlayer(
         return
     }
     
-    val currentPlayer = exoPlayer ?: return
+    val currentPlayer = exoPlayer.value ?: return
+    
+    var showPlayButton by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
     
     Box(modifier = modifier) {
         AndroidView(
@@ -206,21 +207,38 @@ fun VideoPlayer(
                     useController = false
                 }
             },
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable {
+                    // 点击屏幕切换播放/暂停
+                    if (currentPlayer.isPlaying) {
+                        currentPlayer.pause()
+                        showPlayButton = true  // 暂停时显示按钮
+                    } else {
+                        currentPlayer.play()
+                        // 播放时显示按钮，然后2秒后自动隐藏
+                        showPlayButton = true
+                        coroutineScope.launch {
+                            delay(2000)
+                            if (currentPlayer.isPlaying) {
+                                showPlayButton = false
+                            }
+                        }
+                    }
+                }
         )
         
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.9f))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+        // 屏幕中央的播放/暂停按钮（暂停时始终显示，播放时点击后显示2秒）
+        if (showPlayButton || !isPlaying) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(80.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
                 IconButton(
                     onClick = {
@@ -229,18 +247,65 @@ fun VideoPlayer(
                         } else {
                             currentPlayer.play()
                         }
-                    }
+                    },
+                    modifier = Modifier.size(80.dp)
                 ) {
-                    Text(
-                        text = if (isPlaying) "暂停" else "播放",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    if (isPlaying) {
+                        // 暂停图标：两个竖条
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp, 32.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        shape = MaterialTheme.shapes.small
+                                    )
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp, 32.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        shape = MaterialTheme.shapes.small
+                                    )
+                            )
+                        }
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "播放",
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(48.dp)
+                        )
+                    }
                 }
-                
+            }
+        }
+        
+        // 底部进度条和控制栏 - 现代化样式（更薄）
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+                )
+                .padding(horizontal = 12.dp, vertical = 2.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // 进度条
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text(
                     text = formatTime(currentPosition),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.width(50.dp)
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.width(45.dp)
                 )
                 
                 Slider(
@@ -249,29 +314,34 @@ fun VideoPlayer(
                         val newPosition = (progress * duration).toLong()
                         currentPlayer.seekTo(newPosition)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(0.3f)
+                        .height(6.dp),
+                    colors = SliderDefaults.colors(
+                        thumbColor = MaterialTheme.colorScheme.primary,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                    )
                 )
                 
                 Text(
                     text = formatTime(duration),
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.width(50.dp)
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.width(45.dp)
                 )
-            }
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+                
+                // 倍速控制 - 放在右边
                 Box {
-                    IconButton(
-                        onClick = { showSpeedMenu = !showSpeedMenu }
+                    TextButton(
+                        onClick = { showSpeedMenu = !showSpeedMenu },
+                        modifier = Modifier.padding(start = 4.dp)
                     ) {
-                    Text(
-                        text = "${playbackSpeed}x",
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                        Text(
+                            text = "${playbackSpeed}x",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                     DropdownMenu(
                         expanded = showSpeedMenu,
@@ -287,30 +357,6 @@ fun VideoPlayer(
                                 }
                             )
                         }
-                    }
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    IconButton(
-                        onClick = { showVolumeControl = !showVolumeControl }
-                    ) {
-                        Text(
-                            text = if (currentVolume > 0) "音量" else "静音",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                    if (showVolumeControl) {
-                        Slider(
-                            value = currentVolume.toFloat() / maxVolume,
-                            onValueChange = { volume ->
-                                val newVolume = (volume * maxVolume).toInt()
-                                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, newVolume, 0)
-                                currentVolume = newVolume
-                            },
-                            modifier = Modifier.width(100.dp)
-                        )
                     }
                 }
             }
