@@ -1,7 +1,13 @@
 package com.xuyang.ttpage.navigation
 
+import android.util.Log
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -37,8 +43,13 @@ fun NavGraph(
                 viewModel = homeViewModel,
                 topicViewModel = topicViewModel,
                 onVideoClick = { video ->
-                    navController.navigate("detail/${video.id}") {
-                        launchSingleTop = true
+                    try {
+                        Log.d("NavGraph", "点击视频，准备导航 - videoId: ${video.id}, title: ${video.title}")
+                        navController.navigate("detail/${video.id}") {
+                            launchSingleTop = true
+                        }
+                    } catch (e: Exception) {
+                        Log.e("NavGraph", "导航失败", e)
                     }
                 },
                 onRefreshRequest = {
@@ -88,20 +99,49 @@ fun NavGraph(
         }
         // 视频 - 详情
         composable(
-            route = "detail/{${Screen.VIDEO_ID_ARG}}"
+            route = "detail/{videoId}"
         ) { backStackEntry ->
-            val videoId = backStackEntry.arguments?.getString(Screen.VIDEO_ID_ARG) ?: ""
-            val video = homeViewModel.getVideoById(videoId) ?: Video(
-                id = videoId,
-                title = "视频不存在",
-                authorId = "unknown",
-                authorName = "未知",
-                publishTime = "未知",
-                likeCount = 0u,
-                commentCount = 0u,
-                isHot = false,
-                topics = emptyList()
-            )
+            val videoId = try {
+                backStackEntry.arguments?.getString(Screen.VIDEO_ID_ARG) ?: ""
+            } catch (e: Exception) {
+                Log.e("NavGraph", "获取videoId失败", e)
+                ""
+            }
+            
+            Log.d("NavGraph", "导航到视频详情页，videoId: $videoId")
+            
+            val video = try {
+                homeViewModel.getVideoById(videoId) ?: run {
+                    Log.w("NavGraph", "未找到视频，videoId: $videoId，创建默认视频对象")
+                    Video(
+                        id = videoId,
+                        title = "视频不存在",
+                        authorId = "unknown",
+                        authorName = "未知",
+                        publishTime = "未知",
+                        likeCount = 0u,
+                        commentCount = 0u,
+                        isHot = false,
+                        topics = emptyList()
+                    )
+                }
+            } catch (e: Exception) {
+                Log.e("NavGraph", "获取视频失败", e)
+                Video(
+                    id = videoId,
+                    title = "加载失败",
+                    authorId = "unknown",
+                    authorName = "未知",
+                    publishTime = "未知",
+                    likeCount = 0u,
+                    commentCount = 0u,
+                    isHot = false,
+                    topics = emptyList()
+                )
+            }
+            
+            Log.d("NavGraph", "视频信息 - id: ${video.id}, title: ${video.title}, videoUrl: ${video.videoUrl}")
+            
             DetailScreen(
                 video = video,
                 onBackClick = {

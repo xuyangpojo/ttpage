@@ -1,5 +1,6 @@
 package com.xuyang.ttpage.ui.components
 
+import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.foundation.background
@@ -43,20 +44,83 @@ fun VideoPlayer(
     val context = LocalContext.current
     
     val videoUri = remember(videoUrl) {
-        if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://") || videoUrl.startsWith("android.resource://")) {
-            videoUrl
-        } else {
-            ResourceHelper.getRawResourceUri(context, videoUrl)
+        try {
+            Log.d("VideoPlayer", "处理视频URL: $videoUrl")
+            if (videoUrl.startsWith("http://") || videoUrl.startsWith("https://") || videoUrl.startsWith("android.resource://")) {
+                Log.d("VideoPlayer", "使用原始URL: $videoUrl")
+                videoUrl
+            } else {
+                val uri = ResourceHelper.getRawResourceUri(context, videoUrl)
+                if (uri != null) {
+                    Log.d("VideoPlayer", "找到资源URI: $uri")
+                } else {
+                    Log.w("VideoPlayer", "未找到资源: $videoUrl")
+                }
+                uri
+            }
+        } catch (e: Exception) {
+            Log.e("VideoPlayer", "处理视频URL时出错", e)
+            null
         }
     }
     
-    val exoPlayer = remember(videoUri) {
-        ExoPlayer.Builder(context).build().apply {
-            val mediaItem = MediaItem.fromUri(videoUri)
-            setMediaItem(mediaItem)
-            prepare()
-            playWhenReady = false
-            repeatMode = Player.REPEAT_MODE_OFF
+    var playerError by remember { mutableStateOf<String?>(null) }
+    var exoPlayer: ExoPlayer? by remember(videoUri) {
+        mutableStateOf(null)
+    }
+    
+    // 验证资源是否存在
+    val isValidResource = remember(videoUri) {
+        val isValid = videoUri != null && videoUri.isNotEmpty() && (
+            videoUri.startsWith("http://") || 
+            videoUri.startsWith("https://") || 
+            videoUri.startsWith("android.resource://")
+        )
+        Log.d("VideoPlayer", "资源验证结果: isValid=$isValid, videoUri=$videoUri")
+        isValid
+    }
+    
+    // 初始化ExoPlayer
+    LaunchedEffect(videoUri) {
+        if (videoUri == null || videoUri.isEmpty()) {
+            val errorMsg = "视频资源不存在: $videoUrl"
+            Log.w("VideoPlayer", errorMsg)
+            playerError = errorMsg
+            return@LaunchedEffect
+        }
+        
+        if (!isValidResource) {
+            val errorMsg = "视频资源格式无效: $videoUri"
+            Log.w("VideoPlayer", errorMsg)
+            playerError = errorMsg
+            return@LaunchedEffect
+        }
+        
+        try {
+            Log.d("VideoPlayer", "开始初始化ExoPlayer，URI: $videoUri")
+            val player = ExoPlayer.Builder(context).build().apply {
+                val mediaItem = MediaItem.fromUri(videoUri)
+                setMediaItem(mediaItem)
+                prepare()
+                playWhenReady = false
+                repeatMode = Player.REPEAT_MODE_OFF
+                
+                // 添加错误监听
+                addListener(object : Player.Listener {
+                    override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                        Log.e("VideoPlayer", "播放器错误", error)
+                        playerError = "播放错误: ${error.message}"
+                    }
+                })
+            }
+            exoPlayer = player
+            Log.d("VideoPlayer", "ExoPlayer初始化成功")
+            onPlayerReady(player)
+        } catch (e: Exception) {
+            val errorMsg = "视频加载失败: ${e.message}"
+            Log.e("VideoPlayer", errorMsg, e)
+            playerError = errorMsg
+            e.printStackTrace()
         }
     }
     
@@ -71,28 +135,70 @@ fun VideoPlayer(
     var currentVolume by remember { mutableIntStateOf(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)) }
     val maxVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) }
     
-    LaunchedEffect(exoPlayer, videoUri) {
-        onPlayerReady(exoPlayer)
-        while (true) {
-            isPlaying = exoPlayer.isPlaying
-            currentPosition = exoPlayer.currentPosition
-            duration = if (exoPlayer.duration > 0) exoPlayer.duration else 0L
-            playbackSpeed = exoPlayer.playbackParameters.speed
+    // 更新播放状态
+    LaunchedEffect(exoPlayer) {
+        val player = exoPlayer ?: return@LaunchedEffect
+        while (player == exoPlayer) {
+            try {
+                isPlaying = player.isPlaying
+                currentPosition = player.currentPosition
+                duration = if (player.duration > 0) player.duration else 0L
+                playbackSpeed = player.playbackParameters.speed
+            } catch (e: Exception) {
+                Log.e("VideoPlayer", "更新播放状态时出错", e)
+                playerError = "播放器错误: ${e.message}"
+                break
+            }
             delay(100)
         }
     }
     
-    DisposableEffect(Unit) {
+    DisposableEffect(exoPlayer) {
         onDispose {
-            exoPlayer.release()
+            try {
+                Log.d("VideoPlayer", "释放ExoPlayer")
+                exoPlayer?.release()
+            } catch (e: Exception) {
+                Log.e("VideoPlayer", "释放ExoPlayer时出错", e)
+            }
         }
     }
+    
+    // 如果资源无效或加载失败，显示错误信息
+    if (!isValidResource || playerError != null || exoPlayer == null) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = playerError ?: "视频资源不存在",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        return
+    }
+    
+    val currentPlayer = exoPlayer ?: return
     
     Box(modifier = modifier) {
         AndroidView(
             factory = { ctx ->
                 PlayerView(ctx).apply {
-                    player = exoPlayer
+                    player = currentPlayer
                     layoutParams = FrameLayout.LayoutParams(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.MATCH_PARENT
@@ -118,10 +224,10 @@ fun VideoPlayer(
             ) {
                 IconButton(
                     onClick = {
-                        if (exoPlayer.isPlaying) {
-                            exoPlayer.pause()
+                        if (currentPlayer.isPlaying) {
+                            currentPlayer.pause()
                         } else {
-                            exoPlayer.play()
+                            currentPlayer.play()
                         }
                     }
                 ) {
@@ -141,7 +247,7 @@ fun VideoPlayer(
                     value = if (duration > 0) currentPosition.toFloat() / duration else 0f,
                     onValueChange = { progress ->
                         val newPosition = (progress * duration).toLong()
-                        exoPlayer.seekTo(newPosition)
+                        currentPlayer.seekTo(newPosition)
                     },
                     modifier = Modifier.weight(1f)
                 )
@@ -175,7 +281,7 @@ fun VideoPlayer(
                             DropdownMenuItem(
                                 text = { Text("${speed}x") },
                                 onClick = {
-                                    exoPlayer.playbackParameters = exoPlayer.playbackParameters.withSpeed(speed)
+                                    currentPlayer.playbackParameters = currentPlayer.playbackParameters.withSpeed(speed)
                                     playbackSpeed = speed
                                     showSpeedMenu = false
                                 }

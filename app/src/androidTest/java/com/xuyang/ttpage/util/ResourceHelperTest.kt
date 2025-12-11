@@ -47,9 +47,8 @@ class ResourceHelperTest {
         // When
         val uri = ResourceHelper.getRawResourceUri(context, nonExistentResource)
         
-        // Then - 应该返回URI格式，即使资源不存在
-        assertNotNull(uri)
-        assertTrue(uri.startsWith("android.resource://"))
+        // Then - 资源不存在时应该返回null
+        assertNull(uri)
     }
 }
 

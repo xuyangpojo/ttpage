@@ -12,30 +12,49 @@ import androidx.compose.ui.platform.LocalContext
  * @date 2025-12-10
  */
 object ResourceHelper {
-    fun getRawResourceUri(context: Context, resourceName: String): String {
+    fun getRawResourceUri(context: Context, resourceName: String): String? {
         val resourceId = context.resources.getIdentifier(
             resourceName,
             "raw",
             context.packageName
         )
-        return "android.resource://${context.packageName}/$resourceId"
+        // 如果资源不存在，getIdentifier返回0，此时返回null
+        return if (resourceId != 0) {
+            "android.resource://${context.packageName}/$resourceId"
+        } else {
+            null
+        }
     }
-    fun getDrawableResourceUri(context: Context, resourceName: String): String {
+    
+    fun hasRawResource(context: Context, resourceName: String): Boolean {
+        val resourceId = context.resources.getIdentifier(
+            resourceName,
+            "raw",
+            context.packageName
+        )
+        return resourceId != 0
+    }
+    fun getDrawableResourceUri(context: Context, resourceName: String): String? {
         val resourceId = context.resources.getIdentifier(
             resourceName,
             "drawable",
             context.packageName
         )
-        return "android.resource://${context.packageName}/$resourceId"
+        // 如果资源不存在，getIdentifier返回0，此时返回null
+        return if (resourceId != 0) {
+            "android.resource://${context.packageName}/$resourceId"
+        } else {
+            null
+        }
     }
 }
 @Composable
-fun getRawResourceUri(resourceName: String): String {
+fun getRawResourceUri(resourceName: String): String? {
     val context = LocalContext.current
     return ResourceHelper.getRawResourceUri(context, resourceName)
 }
 @Composable
-fun getDrawableResourceUri(resourceName: String): String {
+fun getDrawableResourceUri(resourceName: String): String? {
     val context = LocalContext.current
     return ResourceHelper.getDrawableResourceUri(context, resourceName)
 }

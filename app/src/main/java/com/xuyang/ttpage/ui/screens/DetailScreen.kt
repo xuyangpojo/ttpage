@@ -3,6 +3,7 @@ package com.xuyang.ttpage.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -48,12 +49,58 @@ fun DetailScreen(
     modifier: Modifier = Modifier,
     homeViewModel: HomeViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
-    val context = LocalContext.current
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    LaunchedEffect(video.id) {
+        try {
+            Log.d("DetailScreen", "进入详情页 - videoId: ${video.id}, title: ${video.title}")
+        } catch (e: Exception) {
+            Log.e("DetailScreen", "初始化时出错", e)
+            errorMessage = e.message
+        }
+    }
+    
+    if (errorMessage != null) {
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.errorContainer
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "加载视频详情失败",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "错误: $errorMessage",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onBackClick) {
+                    Text("返回")
+                }
+            }
+        }
+        return
+    }
+    
     val videos = homeViewModel.videos.collectAsState().value
+    Log.d("DetailScreen", "视频列表大小: ${videos.size}")
     
     // 找到当前视频在列表中的索引
     val currentIndex = remember(video.id) {
-        videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
+        try {
+            val index = videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
+            Log.d("DetailScreen", "当前视频索引: $index")
+            index
+        } catch (e: Exception) {
+            Log.e("DetailScreen", "计算索引时出错", e)
+            0
+        }
     }
     
     // 创建垂直Pager状态
@@ -64,13 +111,17 @@ fun DetailScreen(
     
     // 当视频列表变化时，更新页面数量
     LaunchedEffect(videos.size) {
-        val pageCount = videos.size.coerceAtLeast(1)
-        if (pagerState.pageCount != pageCount) {
-            // 如果当前页面超出范围，跳转到最后一页
-            val targetPage = currentIndex.coerceIn(0, videos.size - 1)
-            if (targetPage != pagerState.currentPage) {
-                pagerState.animateScrollToPage(targetPage)
+        try {
+            val pageCount = videos.size.coerceAtLeast(1)
+            if (pagerState.pageCount != pageCount) {
+                // 如果当前页面超出范围，跳转到最后一页
+                val targetPage = currentIndex.coerceIn(0, videos.size - 1)
+                if (targetPage != pagerState.currentPage) {
+                    pagerState.animateScrollToPage(targetPage)
+                }
             }
+        } catch (e: Exception) {
+            Log.e("DetailScreen", "更新页面数量时出错", e)
         }
     }
     
@@ -102,6 +153,7 @@ fun DetailScreen(
             key = { index -> videos.getOrNull(index)?.id ?: index }
         ) { page ->
             val currentVideo = videos.getOrNull(page) ?: video
+            Log.d("DetailScreen", "显示页面 $page，视频ID: ${currentVideo.id}")
             
             DetailVideoPage(
                 video = currentVideo,
@@ -158,12 +210,48 @@ fun DetailVideoPage(
             // 视频播放器（如果有视频）
             if (video.hasVideo && !video.videoUrl.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                VideoPlayer(
-                    videoUrl = video.videoUrl!!,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                )
+                var playerError by remember { mutableStateOf<String?>(null) }
+                
+                LaunchedEffect(video.videoUrl) {
+                    try {
+                        Log.d("DetailVideoPage", "准备加载视频播放器 - videoUrl: ${video.videoUrl}")
+                    } catch (e: Exception) {
+                        Log.e("DetailVideoPage", "加载视频播放器失败", e)
+                        playerError = e.message
+                    }
+                }
+                
+                if (playerError != null) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "视频加载失败",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = playerError ?: "未知错误",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                } else {
+                    VideoPlayer(
+                        videoUrl = video.videoUrl ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp)
+                    )
+                }
                 Divider()
             }
             
