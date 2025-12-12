@@ -3,14 +3,10 @@ package com.xuyang.ttpage.model.data
 import org.junit.Assert.*
 import org.junit.Test
 
-/**
- * Video数据模型单元测试
- */
 class VideoTest {
     
     @Test
     fun `hasVideo should return true when videoUrl is not null or blank`() {
-        // Given
         val videoWithVideo = Video(
             id = "1",
             title = "Test",
@@ -24,13 +20,11 @@ class VideoTest {
             topics = listOf("tech")
         )
         
-        // When & Then
         assertTrue(videoWithVideo.hasVideo)
     }
     
     @Test
     fun `hasVideo should return false when videoUrl is null`() {
-        // Given
         val videoWithoutVideo = Video(
             id = "1",
             title = "Test",
@@ -44,13 +38,11 @@ class VideoTest {
             topics = listOf("tech")
         )
         
-        // When & Then
         assertFalse(videoWithoutVideo.hasVideo)
     }
     
     @Test
     fun `hasVideo should return false when videoUrl is blank`() {
-        // Given
         val videoWithBlankVideo = Video(
             id = "1",
             title = "Test",
@@ -64,13 +56,11 @@ class VideoTest {
             topics = listOf("tech")
         )
         
-        // When & Then
         assertFalse(videoWithBlankVideo.hasVideo)
     }
     
     @Test
     fun `video should have all required fields`() {
-        // Given & When
         val video = Video(
             id = "1",
             title = "Test Title",
@@ -84,8 +74,7 @@ class VideoTest {
             videoUrl = "video1",
             topics = listOf("tech", "hot")
         )
-        
-        // Then
+
         assertEquals("1", video.id)
         assertEquals("Test Title", video.title)
         assertEquals("u001", video.authorId)
@@ -101,7 +90,6 @@ class VideoTest {
     
     @Test
     fun `video equals should work correctly`() {
-        // Given
         val video1 = Video(
             id = "1",
             title = "Test",
@@ -125,8 +113,6 @@ class VideoTest {
             isHot = false,
             topics = listOf("tech")
         )
-        
-        // When & Then
         assertEquals(video1, video2)
     }
 }

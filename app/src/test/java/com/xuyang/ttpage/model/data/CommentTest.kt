@@ -3,14 +3,10 @@ package com.xuyang.ttpage.model.data
 import org.junit.Assert.*
 import org.junit.Test
 
-/**
- * Comment数据模型单元测试
- */
 class CommentTest {
     
     @Test
     fun `comment should have all required fields`() {
-        // Given & When
         val comment = Comment(
             id = "c001",
             videoId = "v001",
@@ -21,8 +17,6 @@ class CommentTest {
             likeCount = 10u,
             replyCount = 2u
         )
-        
-        // Then
         assertEquals("c001", comment.id)
         assertEquals("v001", comment.videoId)
         assertEquals("u001", comment.authorId)
@@ -36,7 +30,6 @@ class CommentTest {
     
     @Test
     fun `comment with parent should have parentCommentId`() {
-        // Given & When
         val reply = Comment(
             id = "c002",
             videoId = "v001",
@@ -48,14 +41,11 @@ class CommentTest {
             replyCount = 0u,
             parentCommentId = "c001"
         )
-        
-        // Then
         assertEquals("c001", reply.parentCommentId)
     }
     
     @Test
     fun `CommentWithReplies should build tree structure correctly`() {
-        // Given
         val parentComment = Comment(
             id = "c001",
             videoId = "v001",
@@ -91,8 +81,7 @@ class CommentTest {
             replyCount = 0u,
             parentCommentId = "c001"
         )
-        
-        // When
+
         val commentWithReplies = CommentWithReplies(
             comment = parentComment,
             replies = listOf(
@@ -100,8 +89,7 @@ class CommentTest {
                 CommentWithReplies(comment = reply2)
             )
         )
-        
-        // Then
+
         assertEquals(parentComment.id, commentWithReplies.comment.id)
         assertEquals(2, commentWithReplies.replies.size)
         assertEquals("c002", commentWithReplies.replies[0].comment.id)

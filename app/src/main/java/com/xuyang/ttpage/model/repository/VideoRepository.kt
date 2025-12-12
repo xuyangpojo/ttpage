@@ -17,7 +17,7 @@ class VideoRepository {
                 id = "v001",
                 title = "【钢琴练习vlog】卡农",
                 authorId = "u001",
-                authorName = "钢琴爱好者",
+                authorName = "钢琴爱好者小风",
                 publishTime = "2小时前",
                 likeCount = 128u,
                 commentCount = 45u,
@@ -30,7 +30,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v002",
-                title = "火箭升空",
+                title = "快舟一号甲火箭升空",
                 authorId = "u002",
                 authorName = "科技日报",
                 publishTime = "5小时前",
@@ -43,7 +43,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v003",
-                title = "天气新闻",
+                title = "【天气】河南成为强降雪中心",
                 authorId = "u003",
                 authorName = "澎湃新闻",
                 publishTime = "1天前",
@@ -56,9 +56,9 @@ class VideoRepository {
             ),
             Video(
                 id = "v004",
-                title = "电吉他vlog",
+                title = "电吉他练习vlog",
                 authorId = "u004",
-                authorName = "摇滚音乐人",
+                authorName = "摇滚史密斯",
                 publishTime = "2天前",
                 likeCount = 156u,
                 commentCount = 34u,
@@ -69,7 +69,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v005",
-                title = "电吉他练习",
+                title = "【练习】We Go aespa",
                 authorId = "u005",
                 authorName = "吉他手小张",
                 publishTime = "3小时前",
@@ -82,7 +82,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v006",
-                title = "乐器vlog",
+                title = "【Vlog】乐器合奏",
                 authorId = "u006",
                 authorName = "音乐工作室",
                 publishTime = "6小时前",
@@ -95,9 +95,9 @@ class VideoRepository {
             ),
             Video(
                 id = "v007",
-                title = "世界旅行",
+                title = "【世界旅行】澳大利亚",
                 authorId = "u007",
-                authorName = "旅行博主",
+                authorName = "旅行日记",
                 publishTime = "4小时前",
                 likeCount = 201u,
                 commentCount = 56u,
@@ -108,7 +108,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v008",
-                title = "汽车销量",
+                title = "汽车销量创历史新高",
                 authorId = "u008",
                 authorName = "汽车之家",
                 publishTime = "1天前",
@@ -121,7 +121,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v009",
-                title = "飞机制造",
+                title = "九天无人机首飞成功",
                 authorId = "u009",
                 authorName = "航空科技",
                 publishTime = "8小时前",
@@ -147,7 +147,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v011",
-                title = "钢琴演奏",
+                title = "钢琴演奏练习",
                 authorId = "u011",
                 authorName = "音乐家",
                 publishTime = "6天前",
@@ -160,7 +160,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v012",
-                title = "国内旅行",
+                title = "【旅行Vlog】重庆",
                 authorId = "u012",
                 authorName = "旅行达人",
                 publishTime = "1月前",
@@ -173,7 +173,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v013",
-                title = "电影票房",
+                title = "电影票房最新资讯",
                 authorId = "u013",
                 authorName = "娱乐资讯",
                 publishTime = "2天前",
@@ -186,7 +186,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v014",
-                title = "国庆出游",
+                title = "国庆出游含“8”量很高",
                 authorId = "u014",
                 authorName = "旅行日记",
                 publishTime = "1天前",
@@ -225,7 +225,7 @@ class VideoRepository {
             ),
             Video(
                 id = "v017",
-                title = "日本地震",
+                title = "【新闻】日本地震",
                 authorId = "u017",
                 authorName = "央视新闻",
                 publishTime = "1天前",

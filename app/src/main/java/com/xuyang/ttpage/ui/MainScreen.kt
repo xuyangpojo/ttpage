@@ -13,8 +13,10 @@ import com.xuyang.ttpage.viewmodel.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 /**
- * 主屏幕容器
- * 包含底部导航栏和主要内容区域
+ * MainScreen
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 @Composable
 fun MainScreen(
@@ -22,32 +24,25 @@ fun MainScreen(
     modifier: Modifier = Modifier
 ) {
     val homeViewModel: HomeViewModel = viewModel()
-    
     var scrollToTopTrigger by remember { mutableIntStateOf(0) }
-    
-    // 获取当前路由（通过监听导航变化）
     var currentRoute by remember { mutableStateOf(Screen.Home.route) }
     
     LaunchedEffect(navController) {
-        // 初始化当前路由
         currentRoute = navController.currentBackStackEntry?.destination?.route ?: Screen.Home.route
-        
-        // 监听导航变化
         navController.addOnDestinationChangedListener { _, destination, _ ->
             currentRoute = destination.route ?: Screen.Home.route
         }
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background, // 使用深色背景
+        containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            // 只在首页和我的页面显示底部导航栏
             if (currentRoute == Screen.Home.route || currentRoute == Screen.Profile.route) {
                 BottomNavigationBar(
                     currentRoute = currentRoute,
+                    // 再次点击首页可触发刷新
                     onHomeClick = {
                         if (currentRoute == Screen.Home.route) {
-                            // 如果已在首页，返回顶部并刷新
                             scrollToTopTrigger++
                             homeViewModel.loadVideos()
                         } else {
@@ -74,4 +69,3 @@ fun MainScreen(
         )
     }
 }
-

@@ -12,22 +12,22 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel层：评论视图模型
+ * CommentViewModel
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 class CommentViewModel : ViewModel() {
     
     private val repository = CommentRepository()
     
-    // UI状态：评论列表（扁平化）
     private val _comments = MutableStateFlow<List<Comment>>(emptyList())
     val comments: StateFlow<List<Comment>> = _comments.asStateFlow()
     
-    // UI状态：树形结构的评论列表（用于UI展示）
     private val _commentsWithReplies = MutableStateFlow<List<CommentWithReplies>>(emptyList())
     val commentsWithReplies: StateFlow<List<CommentWithReplies>> = _commentsWithReplies.asStateFlow()
     
     init {
-        // 当评论列表变化时，更新树形结构
         viewModelScope.launch {
             _comments.collect { flatComments ->
                 _commentsWithReplies.value = buildCommentTree(flatComments)
@@ -35,21 +35,18 @@ class CommentViewModel : ViewModel() {
         }
     }
     
-    // UI状态：加载状态
+    // UI状态: 加载
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
-    // UI状态：错误信息
+    // UI状态: 错误
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
     
-    // UI状态：已点赞的评论ID集合
+    // UI状态: 已点赞的评论
     private val _likedCommentIds = MutableStateFlow<Set<String>>(emptySet())
     val likedCommentIds: StateFlow<Set<String>> = _likedCommentIds.asStateFlow()
     
-    /**
-     * 加载评论列表
-     */
     fun loadComments(videoId: String) {
         viewModelScope.launch {
             try {
@@ -64,15 +61,11 @@ class CommentViewModel : ViewModel() {
         }
     }
     
-    /**
-     * 添加评论
-     */
     fun addComment(videoId: String, content: String, parentCommentId: String? = null) {
         viewModelScope.launch {
             try {
                 _errorMessage.value = null
                 val newComment = repository.addComment(videoId, content, parentCommentId)
-                // 如果是顶级评论（parentCommentId为null），添加到列表开头；否则添加到末尾（保持树形结构）
                 if (parentCommentId == null) {
                     _comments.value = listOf(newComment) + _comments.value
                 } else {
@@ -84,15 +77,11 @@ class CommentViewModel : ViewModel() {
         }
     }
     
-    /**
-     * 点赞评论
-     */
     fun likeComment(commentId: String) {
         viewModelScope.launch {
             try {
                 repository.likeComment(commentId)
                 _likedCommentIds.value = _likedCommentIds.value + commentId
-                // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
                     if (comment.id == commentId) {
                         comment.copy(likeCount = comment.likeCount + 1u)
@@ -106,15 +95,11 @@ class CommentViewModel : ViewModel() {
         }
     }
     
-    /**
-     * 取消点赞评论
-     */
     fun unlikeComment(commentId: String) {
         viewModelScope.launch {
             try {
                 repository.unlikeComment(commentId)
                 _likedCommentIds.value = _likedCommentIds.value - commentId
-                // 更新评论的点赞数
                 _comments.value = _comments.value.map { comment ->
                     if (comment.id == commentId) {
                         comment.copy(likeCount = (comment.likeCount - 1u).coerceAtLeast(0u))
@@ -128,26 +113,13 @@ class CommentViewModel : ViewModel() {
         }
     }
     
-    /**
-     * 清除错误信息
-     */
     fun clearError() {
         _errorMessage.value = null
     }
     
-    /**
-     * 将扁平化的评论列表构建成树形结构
-     * @param flatComments 扁平化的评论列表
-     * @return 树形结构的评论列表（只包含顶级评论，回复嵌套在replies中）
-     */
     private fun buildCommentTree(flatComments: List<Comment>): List<CommentWithReplies> {
-        // 将评论按ID建立索引
         val commentMap = flatComments.associateBy { it.id }
-        
-        // 找出所有顶级评论（parentCommentId为null）
         val topLevelComments = flatComments.filter { it.parentCommentId == null }
-        
-        // 递归构建树形结构
         fun buildReplies(parentId: String): List<CommentWithReplies> {
             return flatComments
                 .filter { it.parentCommentId == parentId }

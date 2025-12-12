@@ -9,9 +9,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * RegisterScreen UI集成测试
- */
 @RunWith(AndroidJUnit4::class)
 class RegisterScreenTest {
     
@@ -20,12 +17,9 @@ class RegisterScreenTest {
     
     @Test
     fun registerScreen_displaysRegisterForm() {
-        // When
         composeTestRule.setContent {
             RegisterScreen()
         }
-        
-        // Then
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("注册").assertIsDisplayed()
         composeTestRule.onNodeWithText("创建账户").assertIsDisplayed()
@@ -33,17 +27,12 @@ class RegisterScreenTest {
     
     @Test
     fun registerScreen_displaysAllInputFields() {
-        // When
         composeTestRule.setContent {
             RegisterScreen()
         }
-        
-        // Then
         composeTestRule.waitForIdle()
-        // 检查输入框标签
         composeTestRule.onNodeWithText("用户名").assertIsDisplayed()
         composeTestRule.onNodeWithText("邮箱").assertIsDisplayed()
         composeTestRule.onNodeWithText("密码").assertIsDisplayed()
     }
 }
-

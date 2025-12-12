@@ -10,21 +10,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel层：用户视图模型
- * 管理用户登录状态和用户信息
+ * UserViewModel
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 class UserViewModel : ViewModel() {
     
-    // UI状态：当前登录用户
     private val _currentUser = MutableStateFlow<User?>(null)
     val currentUser: StateFlow<User?> = _currentUser.asStateFlow()
     
-    // UI状态：是否已登录
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
     
     init {
-        // 监听用户状态变化
         viewModelScope.launch {
             _currentUser.collect { user ->
                 _isLoggedIn.value = user != null
@@ -32,27 +31,19 @@ class UserViewModel : ViewModel() {
         }
     }
     
-    // UI状态：登录状态
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
     
-    // UI状态：错误信息
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
     
-    /**
-     * 登录
-     */
     fun login(username: String, password: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
+                delay(100)
                 
-                // 模拟登录请求
-                delay(1000)
-                
-                // 简单的模拟验证（实际应该调用API）
                 if (username.isNotBlank() && password.isNotBlank()) {
                     _currentUser.value = User(
                         id = "1",
@@ -72,19 +63,12 @@ class UserViewModel : ViewModel() {
         }
     }
     
-    /**
-     * 注册
-     */
     fun register(username: String, email: String, password: String) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
                 _errorMessage.value = null
-                
-                // 模拟注册请求
-                delay(1000)
-                
-                // 简单的模拟验证
+                delay(100)
                 if (username.isNotBlank() && email.isNotBlank() && password.isNotBlank()) {
                     _currentUser.value = User(
                         id = System.currentTimeMillis().toString(),
@@ -104,16 +88,10 @@ class UserViewModel : ViewModel() {
         }
     }
     
-    /**
-     * 登出
-     */
     fun logout() {
         _currentUser.value = null
     }
     
-    /**
-     * 清除错误信息
-     */
     fun clearError() {
         _errorMessage.value = null
     }

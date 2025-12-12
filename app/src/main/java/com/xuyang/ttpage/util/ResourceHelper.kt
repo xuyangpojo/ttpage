@@ -19,8 +19,6 @@ object ResourceHelper {
                 "raw",
                 context.packageName
             )
-            
-            // 如果资源不存在，getIdentifier返回0，此时返回null
             return if (resourceId != 0) {
                 "android.resource://${context.packageName}/$resourceId"
             } else {
@@ -39,13 +37,13 @@ object ResourceHelper {
         )
         return resourceId != 0
     }
+
     fun getDrawableResourceUri(context: Context, resourceName: String): String? {
         val resourceId = context.resources.getIdentifier(
             resourceName,
             "drawable",
             context.packageName
         )
-        // 如果资源不存在，getIdentifier返回0，此时返回null
         return if (resourceId != 0) {
             "android.resource://${context.packageName}/$resourceId"
         } else {
@@ -53,11 +51,13 @@ object ResourceHelper {
         }
     }
 }
+
 @Composable
 fun getRawResourceUri(resourceName: String): String? {
     val context = LocalContext.current
     return ResourceHelper.getRawResourceUri(context, resourceName)
 }
+
 @Composable
 fun getDrawableResourceUri(resourceName: String): String? {
     val context = LocalContext.current

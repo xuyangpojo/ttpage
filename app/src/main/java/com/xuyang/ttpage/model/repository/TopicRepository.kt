@@ -14,13 +14,9 @@ class TopicRepository {
     
     suspend fun getTopics(): List<Topic> {
         return listOf(
-            // all = 20
             Topic(id = "all", name = "全部"),
-            // hot = 10
             Topic(id = "hot", name = "热点"),
-            // news = 10
             Topic(id = "news", name = "新闻"),
-            // vlog = 10
             Topic(id = "vlog", name = "Vlog")
         )
     }

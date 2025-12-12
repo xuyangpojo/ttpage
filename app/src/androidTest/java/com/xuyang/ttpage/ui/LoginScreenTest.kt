@@ -9,9 +9,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * LoginScreen UI集成测试
- */
 @RunWith(AndroidJUnit4::class)
 class LoginScreenTest {
     
@@ -20,12 +17,9 @@ class LoginScreenTest {
     
     @Test
     fun loginScreen_displaysLoginForm() {
-        // When
         composeTestRule.setContent {
             LoginScreen()
         }
-        
-        // Then
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("登录").assertIsDisplayed()
         composeTestRule.onNodeWithText("欢迎回来").assertIsDisplayed()
@@ -33,14 +27,10 @@ class LoginScreenTest {
     
     @Test
     fun loginScreen_displaysUsernameAndPasswordFields() {
-        // When
         composeTestRule.setContent {
             LoginScreen()
         }
-        
-        // Then
         composeTestRule.waitForIdle()
-        // 检查输入框标签
         composeTestRule.onNodeWithText("用户名").assertIsDisplayed()
         composeTestRule.onNodeWithText("密码").assertIsDisplayed()
     }

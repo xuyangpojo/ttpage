@@ -9,9 +9,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * ProfileScreen UI集成测试
- */
 @RunWith(AndroidJUnit4::class)
 class ProfileScreenTest {
     
@@ -20,12 +17,9 @@ class ProfileScreenTest {
     
     @Test
     fun profileScreen_displaysLoginPromptWhenNotLoggedIn() {
-        // When
         composeTestRule.setContent {
             ProfileScreen()
         }
-        
-        // Then
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("未登录").assertIsDisplayed()
         composeTestRule.onNodeWithText("请登录以查看个人信息").assertIsDisplayed()
@@ -35,12 +29,9 @@ class ProfileScreenTest {
     
     @Test
     fun profileScreen_displaysSettings() {
-        // When
         composeTestRule.setContent {
             ProfileScreen()
         }
-        
-        // Then
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("设置").assertIsDisplayed()
         composeTestRule.onNodeWithText("关于").assertIsDisplayed()

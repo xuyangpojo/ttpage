@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.ui.components.VideoPlayer
-import com.xuyang.ttpage.ui.components.CommentSection
+import com.xuyang.ttpage.ui.components.comment.CommentSection
 import com.xuyang.ttpage.viewmodel.HomeViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.abs
@@ -41,12 +41,10 @@ import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
- * View层：内容详情页
- * 
- * 功能：
- * 1. 显示内容的完整信息（实体字符串信息）
- * 2. 支持滑动返回（通过Navigation的返回功能）
- * 3. 支持上下滑动切换不同内容
+ * DetailScreen
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -88,22 +86,18 @@ fun DetailScreen(
     
     val videos = homeViewModel.videos.collectAsState().value
     
-    // 找到当前视频在列表中的索引
     val currentIndex = remember(video.id) {
         videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
     }
     
-    // 创建垂直Pager状态
     val pagerState = rememberPagerState(
         initialPage = currentIndex,
         pageCount = { videos.size.coerceAtLeast(1) }
     )
     
-    // 当视频列表变化时，更新页面数量
     LaunchedEffect(videos.size) {
         val pageCount = videos.size.coerceAtLeast(1)
         if (pagerState.pageCount != pageCount) {
-            // 如果当前页面超出范围，跳转到最后一页
             val targetPage = currentIndex.coerceIn(0, videos.size - 1)
             if (targetPage != pagerState.currentPage) {
                 pagerState.animateScrollToPage(targetPage)
@@ -111,11 +105,9 @@ fun DetailScreen(
         }
     }
     
-    // 监听当前页面变化
     var currentPage by remember { mutableStateOf(pagerState.currentPage) }
     val coroutineScope = rememberCoroutineScope()
     
-    // 监听页面变化
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }
             .distinctUntilChanged()
@@ -126,7 +118,6 @@ fun DetailScreen(
     
     Scaffold(
     ) { paddingValues ->
-        // 使用VerticalPager实现上下切换
         VerticalPager(
             state = pagerState,
             modifier = modifier
@@ -135,14 +126,12 @@ fun DetailScreen(
             key = { index -> videos.getOrNull(index)?.id ?: index }
         ) { page ->
             val currentVideo = videos.getOrNull(page) ?: video
-            // 判断当前页面是否可见（只有当前页面才播放）
             val isVisible = page == currentPage
             
             DetailVideoPage(
                 video = currentVideo,
                 isVisible = isVisible,
                 onPlaybackEnded = {
-                    // 播放完成后，切换到下一个视频
                     if (page == currentPage && page < videos.size - 1) {
                         coroutineScope.launch {
                             pagerState.animateScrollToPage(page + 1)
@@ -155,9 +144,6 @@ fun DetailScreen(
     }
 }
 
-/**
- * 详情页视频页面
- */
 @Composable
 fun DetailVideoPage(
     video: Video,
@@ -170,7 +156,6 @@ fun DetailVideoPage(
     var likeCount by remember { mutableStateOf(video.likeCount) }
     var showComments by remember { mutableStateOf(false) }
     
-    // 复制链接到剪贴板
     fun copyLinkToClipboard() {
         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         val link = "https://ttpage.example.com/video/${video.id}"
@@ -178,17 +163,14 @@ fun DetailVideoPage(
         clipboard.setPrimaryClip(clip)
     }
     
-    // 点赞内容
     fun toggleLike() {
         isLiked = !isLiked
         likeCount = if (isLiked) likeCount + 1u else (likeCount - 1u).coerceAtLeast(0u)
     }
     
-    // 抖音/TikTok风格：视频全屏，右侧半透明信息栏
     Box(
         modifier = modifier.fillMaxSize()
     ) {
-        // 视频播放器 - 全屏显示
         if (video.hasVideo && !video.videoUrl.isNullOrBlank()) {
             VideoPlayer(
                 videoUrl = video.videoUrl!!,
@@ -197,7 +179,6 @@ fun DetailVideoPage(
                 modifier = Modifier.fillMaxSize()
             )
         } else {
-            // 没有视频时显示占位符
             Box(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
@@ -210,7 +191,6 @@ fun DetailVideoPage(
             }
         }
         
-        // 右侧半透明信息栏
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -219,7 +199,6 @@ fun DetailVideoPage(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // 点赞按钮和数量
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -253,7 +232,6 @@ fun DetailVideoPage(
                 )
             }
             
-            // 评论按钮和数量
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -287,7 +265,6 @@ fun DetailVideoPage(
                 )
             }
             
-            // 转发按钮
             IconButton(
                 onClick = { copyLinkToClipboard() },
                 modifier = Modifier
@@ -306,7 +283,6 @@ fun DetailVideoPage(
             }
         }
         
-        // 底部作者信息
         Column(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -341,7 +317,6 @@ fun DetailVideoPage(
             )
         }
         
-        // 评论区弹窗
         if (showComments) {
             Box(
                 modifier = Modifier
@@ -361,7 +336,6 @@ fun DetailVideoPage(
                     Column(
                         modifier = Modifier.fillMaxSize()
                     ) {
-                        // 评论区标题栏
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -382,7 +356,6 @@ fun DetailVideoPage(
                             }
                         }
                         
-                        // 评论区内容 - 可滚动
                         val scrollState = rememberScrollState()
                         CommentSection(
                             videoId = video.id,
@@ -399,7 +372,6 @@ fun DetailVideoPage(
     }
 }
 
-// 格式化数字显示（如：1000 -> 1K, 1000000 -> 1M）
 private fun formatCount(count: UInt): String {
     return when {
         count >= 1_000_000u -> "${count / 1_000_000u}M"
@@ -407,4 +379,3 @@ private fun formatCount(count: UInt): String {
         else -> count.toString()
     }
 }
-

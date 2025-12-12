@@ -25,12 +25,10 @@ import com.xuyang.ttpage.viewmodel.HomeViewModel
 import com.xuyang.ttpage.viewmodel.UserViewModel
 
 /**
- * View层：我的页面
- * 
- * 功能：
- * 1. 显示用户信息
- * 2. 登录/登出功能
- * 3. 用户设置
+ * ProfileScreen
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 @Composable
 fun ProfileScreen(
@@ -50,7 +48,6 @@ fun ProfileScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 用户信息区域
         if (isLoggedIn && currentUser != null) {
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -63,7 +60,6 @@ fun ProfileScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // 头像占位
                         Surface(
                             modifier = Modifier.size(64.dp),
                             shape = MaterialTheme.shapes.medium,
@@ -104,7 +100,6 @@ fun ProfileScreen(
                 }
             }
             
-            // 登出按钮
             Button(
                 onClick = { userViewModel.logout() },
                 modifier = Modifier.fillMaxWidth(),
@@ -121,7 +116,6 @@ fun ProfileScreen(
                 Text("登出")
             }
         } else {
-            // 未登录状态
             Card(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -167,7 +161,6 @@ fun ProfileScreen(
             }
         }
         
-        // 设置选项
         Card(
             modifier = Modifier.fillMaxWidth()
         ) {

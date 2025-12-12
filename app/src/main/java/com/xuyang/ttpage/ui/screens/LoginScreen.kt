@@ -14,7 +14,10 @@ import androidx.compose.ui.unit.dp
 import com.xuyang.ttpage.viewmodel.UserViewModel
 
 /**
- * View层：登录页面
+ * LoginScreen
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +35,6 @@ fun LoginScreen(
     val errorMessage by userViewModel.errorMessage.collectAsState()
     val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
     
-    // 登录成功后返回
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
             onLoginSuccess()
@@ -72,7 +74,6 @@ fun LoginScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // 用户名输入
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
@@ -81,7 +82,6 @@ fun LoginScreen(
                 singleLine = true
             )
             
-            // 密码输入
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -98,8 +98,7 @@ fun LoginScreen(
                     }
                 }
             )
-            
-            // 错误信息
+
             errorMessage?.let { error ->
                 Text(
                     text = error,
@@ -110,7 +109,6 @@ fun LoginScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // 登录按钮
             Button(
                 onClick = {
                     userViewModel.clearError()

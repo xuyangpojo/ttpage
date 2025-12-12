@@ -35,9 +35,6 @@ class CommentRepository {
         }
     }
     
-    /**
-     * 视频1的评论：10多条评论，前3个评论有回复结构
-     */
     private fun getVideo1Comments(): List<Comment> {
         return listOf(
             // 顶级评论1 - 有回复
@@ -947,9 +944,6 @@ class CommentRepository {
         )
     }
     
-    /**
-     * 添加评论
-     */
     suspend fun addComment(videoId: String, content: String, parentCommentId: String? = null): Comment {
         delay(300)
         return Comment(

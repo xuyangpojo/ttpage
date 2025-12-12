@@ -14,7 +14,10 @@ import androidx.compose.ui.unit.dp
 import com.xuyang.ttpage.viewmodel.UserViewModel
 
 /**
- * View层：注册页面
+ * RegisterScreen
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +36,6 @@ fun RegisterScreen(
     val errorMessage by userViewModel.errorMessage.collectAsState()
     val isLoggedIn by userViewModel.isLoggedIn.collectAsState()
     
-    // 注册成功后返回
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn) {
             onRegisterSuccess()
@@ -73,7 +75,6 @@ fun RegisterScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
             
-            // 用户名输入
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
@@ -82,7 +83,6 @@ fun RegisterScreen(
                 singleLine = true
             )
             
-            // 邮箱输入
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -91,7 +91,6 @@ fun RegisterScreen(
                 singleLine = true
             )
             
-            // 密码输入
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -109,7 +108,6 @@ fun RegisterScreen(
                 }
             )
             
-            // 错误信息
             errorMessage?.let { error ->
                 Text(
                     text = error,
@@ -120,7 +118,6 @@ fun RegisterScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // 注册按钮
             Button(
                 onClick = {
                     userViewModel.clearError()

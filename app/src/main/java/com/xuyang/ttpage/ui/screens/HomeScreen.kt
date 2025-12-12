@@ -50,15 +50,10 @@ import com.xuyang.ttpage.viewmodel.TopicViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 /**
- * View层：首页双列推荐页面
- * 
- * 功能：
- * 1. 屏幕分成左右两部分
- * 2. 从上到下显示内容卡片
- * 3. 显示内容的所有信息（作者、发布时间、点赞数、评论数、是否热门、标题）
- * 4. 点击卡片跳转到详情页
- * 5. 顶部话题切换（左右滑动）
- * 6. 下拉刷新和上拉加载更多
+ * HomeScreen
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -70,7 +65,6 @@ fun HomeScreen(
     onRefreshRequest: () -> Unit = { viewModel.refreshVideos() },
     scrollToTopTrigger: Int = 0
 ) {
-    // 观察ViewModel的状态
     val videosByTopic by viewModel.videosByTopic.collectAsState()
     val loadingByTopic by viewModel.loadingByTopic.collectAsState()
     val hasMoreByTopic by viewModel.hasMoreByTopic.collectAsState()
@@ -79,18 +73,15 @@ fun HomeScreen(
     val topics by topicViewModel.topics.collectAsState()
     val selectedTopicId by topicViewModel.selectedTopicId.collectAsState()
     
-    // 找到当前选中topic的索引
     val selectedTopicIndex = remember(selectedTopicId, topics) {
         topics.indexOfFirst { it.id == selectedTopicId }.coerceAtLeast(0)
     }
     
-    // 创建HorizontalPager状态，用于左右滑动切换topic
     val pagerState = rememberPagerState(
         initialPage = selectedTopicIndex,
         pageCount = { topics.size.coerceAtLeast(1) }
     )
     
-    // 当HorizontalPager页面变化时，切换topic
     LaunchedEffect(pagerState.currentPage) {
         val currentPage = pagerState.currentPage
         if (currentPage < topics.size) {
@@ -101,7 +92,6 @@ fun HomeScreen(
         }
     }
     
-    // 当选中topic变化时，同步HorizontalPager页面
     LaunchedEffect(selectedTopicId) {
         val index = topics.indexOfFirst { it.id == selectedTopicId }
         if (index >= 0 && index != pagerState.currentPage) {
@@ -109,21 +99,17 @@ fun HomeScreen(
         }
     }
     
-    // 话题切换时，如果缓存中没有数据则加载
     LaunchedEffect(selectedTopicId) {
         val cachedVideos = videosByTopic[selectedTopicId]
         if (cachedVideos == null || cachedVideos.isEmpty()) {
-            // 如果缓存中没有数据，加载并更新currentTopicId
             viewModel.loadVideos(selectedTopicId, refresh = true, updateCurrentTopic = true)
         } else {
-            // 如果缓存中有数据，只更新currentTopicId，不重新加载
             if (selectedTopicId != currentTopicId) {
                 viewModel.setCurrentTopicId(selectedTopicId)
             }
         }
     }
     
-    // 返回顶部功能
     LaunchedEffect(scrollToTopTrigger) {
         if (scrollToTopTrigger > 0) {
             onRefreshRequest()
@@ -131,7 +117,6 @@ fun HomeScreen(
     }
     
     Column(modifier = modifier.fillMaxSize()) {
-        // 话题切换栏
         TopicTabs(
             topics = topics,
             selectedTopicId = selectedTopicId,
@@ -140,7 +125,6 @@ fun HomeScreen(
             }
         )
         
-        // 使用HorizontalPager实现左右滑动切换topic
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.fillMaxSize(),
@@ -148,8 +132,6 @@ fun HomeScreen(
         ) { page ->
             val currentTopic = topics.getOrNull(page)
             if (currentTopic != null) {
-                // 为每个topic加载对应的视频（如果缓存中没有）
-                // 注意：不更新currentTopicId，让每个topic独立加载
                 LaunchedEffect(currentTopic.id) {
                     val cachedVideos = videosByTopic[currentTopic.id]
                     if (cachedVideos == null || cachedVideos.isEmpty()) {
@@ -157,13 +139,10 @@ fun HomeScreen(
                     }
                 }
                 
-                // 获取当前topic的视频列表（从缓存中）
                 val topicVideos = videosByTopic[currentTopic.id] ?: emptyList()
                 val topicIsLoading = loadingByTopic[currentTopic.id] ?: false
                 val topicHasMore = hasMoreByTopic[currentTopic.id] ?: true
                 val isCurrentTopic = currentTopic.id == currentTopicId
-                
-                // 刷新状态：只有在当前topic且正在加载且有视频时才显示刷新
                 val isRefreshing = topicIsLoading && topicVideos.isNotEmpty() && isCurrentTopic
                 
                 SwipeRefresh(
@@ -188,9 +167,6 @@ fun HomeScreen(
     }
 }
 
-/**
- * Topic视频内容组件（双列布局）
- */
 @Composable
 fun TopicVideoContent(
     topicId: String,
@@ -201,20 +177,16 @@ fun TopicVideoContent(
     onLoadMore: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 为每个topic创建独立的滚动状态
     val leftListState = rememberLazyListState()
     val rightListState = rememberLazyListState()
     
-    // 同步滚动标志，防止循环同步
     var isSyncingScroll by remember { mutableStateOf(false) }
     
-    // 使用 snapshotFlow 实时监听左列滚动变化，同步到右列
     LaunchedEffect(leftListState) {
         snapshotFlow {
             leftListState.firstVisibleItemIndex to leftListState.firstVisibleItemScrollOffset
         }
         .collect { (index, offset) ->
-            // 只有在不是同步过程中才执行，避免循环同步
             if (!isSyncingScroll && rightListState.layoutInfo.totalItemsCount > 0) {
                 isSyncingScroll = true
                 
@@ -223,30 +195,25 @@ fun TopicVideoContent(
                     rightListState.layoutInfo.totalItemsCount - 1
                 )
                 
-                // 使用 scrollToItem 实现实时同步
                 try {
                     rightListState.scrollToItem(
                         index = rightIndex,
                         scrollOffset = offset
                     )
                 } catch (e: Exception) {
-                    // 忽略滚动错误（可能因为索引超出范围）
                 }
                 
-                // 短暂延迟后重置标志，允许下一次同步
                 kotlinx.coroutines.delay(1)
                 isSyncingScroll = false
             }
         }
     }
     
-    // 使用 snapshotFlow 实时监听右列滚动变化，同步到左列
     LaunchedEffect(rightListState) {
         snapshotFlow {
             rightListState.firstVisibleItemIndex to rightListState.firstVisibleItemScrollOffset
         }
         .collect { (index, offset) ->
-            // 只有在不是同步过程中才执行，避免循环同步
             if (!isSyncingScroll && leftListState.layoutInfo.totalItemsCount > 0) {
                 isSyncingScroll = true
                 
@@ -255,24 +222,20 @@ fun TopicVideoContent(
                     leftListState.layoutInfo.totalItemsCount - 1
                 )
                 
-                // 使用 scrollToItem 实现实时同步
                 try {
                     leftListState.scrollToItem(
                         index = leftIndex,
                         scrollOffset = offset
                     )
                 } catch (e: Exception) {
-                    // 忽略滚动错误（可能因为索引超出范围）
                 }
                 
-                // 短暂延迟后重置标志，允许下一次同步
                 kotlinx.coroutines.delay(1)
                 isSyncingScroll = false
             }
         }
     }
     
-    // 检测滚动到底部，加载更多
     LaunchedEffect(leftListState, rightListState, hasMore, isLoading) {
         snapshotFlow {
             val leftLastVisible = leftListState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
@@ -291,7 +254,6 @@ fun TopicVideoContent(
     }
     
     if (isLoading && videos.isEmpty()) {
-        // 加载中显示
         Box(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -299,7 +261,6 @@ fun TopicVideoContent(
             CircularProgressIndicator()
         }
     } else {
-        // 双列布局（使用两个LazyColumn，通过同步滚动实现整体滚动效果）
         Box(
             modifier = modifier.fillMaxSize()
         ) {
@@ -308,7 +269,6 @@ fun TopicVideoContent(
                     .fillMaxSize()
                     .padding(horizontal = 8.dp)
             ) {
-                // 左列
                 LazyColumn(
                     state = leftListState,
                     modifier = Modifier
@@ -325,7 +285,6 @@ fun TopicVideoContent(
                         )
                     }
                     
-                    // 加载更多指示器
                     if (isLoading && videos.isNotEmpty()) {
                         item {
                             Box(
@@ -340,7 +299,6 @@ fun TopicVideoContent(
                     }
                 }
                 
-                // 右列（可以滚动，通过同步实现与左列一起滚动）
                 LazyColumn(
                     state = rightListState,
                     modifier = Modifier
@@ -357,7 +315,6 @@ fun TopicVideoContent(
                         )
                     }
                     
-                    // 加载更多指示器
                     if (isLoading && videos.isNotEmpty()) {
                         item {
                             Box(
@@ -376,9 +333,6 @@ fun TopicVideoContent(
     }
 }
 
-/**
- * 话题切换标签栏
- */
 @Composable
 fun TopicTabs(
     topics: List<Topic>,
@@ -389,7 +343,6 @@ fun TopicTabs(
     val selectedIndex = topics.indexOfFirst { it.id == selectedTopicId }.takeIf { it >= 0 } ?: 0
     val topicsListState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
     
-    // 当选中话题变化时，滚动到对应位置
     LaunchedEffect(selectedTopicId) {
         val index = topics.indexOfFirst { it.id == selectedTopicId }
         if (index >= 0) {
@@ -421,9 +374,6 @@ fun TopicTabs(
     }
 }
 
-/**
- * 话题标签项
- */
 @Composable
 fun TopicTabItem(
     topic: Topic,
@@ -455,9 +405,6 @@ fun TopicTabItem(
     }
 }
 
-/**
- * 视频卡片组件
- */
 @Composable
 fun VideoCard(
     video: Video,
@@ -476,7 +423,6 @@ fun VideoCard(
                 .padding(4.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            // 视频封面（如果有）- 自适应布局
             if (video.hasVideo && !video.videoCover.isNullOrBlank()) {
                 val context = LocalContext.current
                 val coverResourceId = try {
@@ -490,31 +436,23 @@ fun VideoCard(
                 }
                 
                 if (coverResourceId != 0) {
-                    // 自适应封面布局：根据图片比例计算高度
                     BoxWithConstraints(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         val maxWidth = maxWidth
-                        
-                        // 获取图片尺寸并计算高度
                         val imageHeight = remember(coverResourceId, maxWidth) {
                             try {
                                 val drawable = context.resources.getDrawable(coverResourceId, null)
                                 val width = drawable.intrinsicWidth
                                 val height = drawable.intrinsicHeight
                                 if (width > 0 && height > 0) {
-                                    // 计算宽高比
                                     val aspectRatio = height.toFloat() / width.toFloat()
-                                    // 根据最大宽度和宽高比计算高度
                                     val calculatedHeight = maxWidth * aspectRatio
-                                    // 限制高度范围：最小100dp，最大300dp
                                     calculatedHeight.coerceIn(100.dp, 300.dp)
                                 } else {
-                                    // 默认比例 16:9
                                     maxWidth * 9f / 16f
                                 }
                             } catch (e: Exception) {
-                                // 默认比例 16:9
                                 maxWidth * 9f / 16f
                             }
                         }
@@ -532,7 +470,6 @@ fun VideoCard(
                 }
             }
             
-            // 标题
             Text(
                 text = video.title,
                 style = MaterialTheme.typography.titleSmall,
@@ -543,7 +480,6 @@ fun VideoCard(
             
             Spacer(modifier = Modifier.height(1.dp))
             
-            // 作者和发布时间
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -561,30 +497,27 @@ fun VideoCard(
                 )
             }
             
-            // 热门标签和互动数据
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // 热门标签
                 if (video.isHot) {
                     Surface(
-                        color = Color(0xFFFF6B35), // 橘红色背景
+                        color = Color(0xFFFF6B35),
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
                             text = "热门",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFFFFFFFF) // 白色文字
+                            color = Color(0xFFFFFFFF)
                         )
                     }
                 } else {
                     Spacer(modifier = Modifier.width(1.dp))
                 }
                 
-                // 点赞数和评论数
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {

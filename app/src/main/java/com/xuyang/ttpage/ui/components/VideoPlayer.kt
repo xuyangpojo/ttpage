@@ -28,15 +28,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 
 /**
  * VideoPlayer 视频播放器组件
+ * @brief 视频播放的基本功能
  * @author xuyang
  * @date 2025-12-10
- * 1. 视频播放和暂停
- * 2. 进度条控制
- * 3. 显示播放状态
- * 4. 倍速播放 (0.5x, 1x, 1.5x, 2x)
- * 5. 音量控制
- * 6. 根据可见性控制自动播放
- * 7. 播放完成回调
  */
 @Composable
 fun VideoPlayer(
@@ -61,8 +55,6 @@ fun VideoPlayer(
     }
     
     var playerError by remember { mutableStateOf<String?>(null) }
-    
-    // 验证资源是否存在
     val isValidResource = remember(videoUri) {
         videoUri != null && videoUri.isNotEmpty() && (
             videoUri.startsWith("http://") || 
@@ -70,15 +62,10 @@ fun VideoPlayer(
             videoUri.startsWith("android.resource://")
         )
     }
-    
-    // 使用 DisposableEffect 来管理 ExoPlayer 的生命周期
     val exoPlayer = remember {
         mutableStateOf<ExoPlayer?>(null)
     }
-    
-    // 初始化ExoPlayer
     LaunchedEffect(videoUri) {
-        // 先释放旧的播放器
         exoPlayer.value?.release()
         exoPlayer.value = null
         playerError = null
@@ -94,7 +81,6 @@ fun VideoPlayer(
         }
         
         try {
-            // 先验证 URI 是否有效
             val uri = android.net.Uri.parse(videoUri)
             if (uri == null) {
                 throw IllegalArgumentException("无效的URI: $videoUri")
@@ -106,17 +92,14 @@ fun VideoPlayer(
                 val mediaItem = MediaItem.fromUri(uri)
                 player.setMediaItem(mediaItem)
                 player.prepare()
-                player.playWhenReady = isVisible  // 根据可见性决定是否自动播放
+                player.playWhenReady = isVisible
                 player.repeatMode = Player.REPEAT_MODE_OFF
-                
-                // 添加错误监听和播放完成监听
                 player.addListener(object : Player.Listener {
                     override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                         playerError = "播放错误: ${error.message}"
                     }
                     
                     override fun onPlaybackStateChanged(playbackState: Int) {
-                        // 播放完成时触发回调
                         if (playbackState == Player.STATE_ENDED) {
                             onPlaybackEnded()
                         }
@@ -129,7 +112,6 @@ fun VideoPlayer(
                 try {
                     player.release()
                 } catch (releaseError: Exception) {
-                    // 忽略释放错误
                 }
                 throw e
             }
@@ -137,15 +119,12 @@ fun VideoPlayer(
             playerError = "视频加载失败: ${e.message}"
         }
     }
-    
-    // 确保在组件销毁时释放播放器
     DisposableEffect(Unit) {
         onDispose {
             try {
                 exoPlayer.value?.release()
                 exoPlayer.value = null
             } catch (e: Exception) {
-                // 忽略释放错误
             }
         }
     }
@@ -155,24 +134,19 @@ fun VideoPlayer(
     var duration by remember { mutableStateOf(0L) }
     var playbackSpeed by remember { mutableStateOf(1f) }
     var showSpeedMenu by remember { mutableStateOf(false) }
-    
-    // 根据可见性控制播放/暂停
     LaunchedEffect(isVisible, exoPlayer.value) {
         val player = exoPlayer.value ?: return@LaunchedEffect
         if (isVisible) {
-            // 可见时自动播放
             if (!player.isPlaying) {
                 player.play()
             }
         } else {
-            // 不可见时暂停
             if (player.isPlaying) {
                 player.pause()
             }
         }
     }
     
-    // 更新播放状态
     LaunchedEffect(exoPlayer.value) {
         val player = exoPlayer.value ?: return@LaunchedEffect
         while (player == exoPlayer.value) {
@@ -189,7 +163,6 @@ fun VideoPlayer(
         }
     }
     
-    // 如果资源无效或加载失败，显示错误信息
     if (!isValidResource || playerError != null || exoPlayer.value == null) {
         Box(
             modifier = modifier
@@ -237,13 +210,11 @@ fun VideoPlayer(
             modifier = Modifier
                 .fillMaxSize()
                 .clickable {
-                    // 点击屏幕切换播放/暂停
                     if (currentPlayer.isPlaying) {
                         currentPlayer.pause()
-                        showPlayButton = true  // 暂停时显示按钮
+                        showPlayButton = true
                     } else {
                         currentPlayer.play()
-                        // 播放时显示按钮，然后2秒后自动隐藏
                         showPlayButton = true
                         coroutineScope.launch {
                             delay(2000)
@@ -255,7 +226,6 @@ fun VideoPlayer(
                 }
         )
         
-        // 屏幕中央的播放/暂停按钮（暂停时始终显示，播放时点击后显示2秒）
         if (showPlayButton || !isPlaying) {
             Box(
                 modifier = Modifier
@@ -278,7 +248,6 @@ fun VideoPlayer(
                     modifier = Modifier.size(80.dp)
                 ) {
                     if (isPlaying) {
-                        // 暂停图标：两个竖条
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
@@ -311,7 +280,6 @@ fun VideoPlayer(
             }
         }
         
-        // 底部进度条和控制栏 - 现代化样式（更薄）
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -322,7 +290,6 @@ fun VideoPlayer(
                 .padding(horizontal = 12.dp, vertical = 2.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // 进度条
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -358,7 +325,6 @@ fun VideoPlayer(
                     modifier = Modifier.width(45.dp)
                 )
                 
-                // 倍速控制 - 放在右边
                 Box {
                     TextButton(
                         onClick = { showSpeedMenu = !showSpeedMenu },
