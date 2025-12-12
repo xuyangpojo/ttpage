@@ -84,9 +84,12 @@ fun DetailScreen(
         return
     }
     
-    val videos = homeViewModel.videos.collectAsState().value
+    val videosByTopic = homeViewModel.videosByTopic.collectAsState().value
+    val videos: List<Video> = remember(videosByTopic) {
+        videosByTopic.values.flatten()
+    }
     
-    val currentIndex = remember(video.id) {
+    val currentIndex = remember(video.id, videos) {
         videos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
     }
     
