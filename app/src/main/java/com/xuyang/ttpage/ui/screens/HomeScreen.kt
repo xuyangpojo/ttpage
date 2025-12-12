@@ -40,10 +40,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Comment
 import androidx.compose.ui.graphics.Color
-// PullRefresh API may not be available in this Material3 version
-// import androidx.compose.material3.pullrefresh.PullRefreshIndicator
-// import androidx.compose.material3.pullrefresh.pullRefresh
-// import androidx.compose.material3.pullrefresh.rememberPullRefreshState
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import com.xuyang.ttpage.model.data.Video
 import com.xuyang.ttpage.model.data.Topic
 import com.xuyang.ttpage.util.ResourceHelper
@@ -73,10 +71,10 @@ fun HomeScreen(
     scrollToTopTrigger: Int = 0
 ) {
     // 观察ViewModel的状态
-    val videos by viewModel.videos.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val videosByTopic by viewModel.videosByTopic.collectAsState()
+    val loadingByTopic by viewModel.loadingByTopic.collectAsState()
+    val hasMoreByTopic by viewModel.hasMoreByTopic.collectAsState()
     val currentTopicId by viewModel.currentTopicId.collectAsState()
-    val hasMore by viewModel.hasMore.collectAsState()
     
     val topics by topicViewModel.topics.collectAsState()
     val selectedTopicId by topicViewModel.selectedTopicId.collectAsState()
@@ -91,13 +89,6 @@ fun HomeScreen(
         initialPage = selectedTopicIndex,
         pageCount = { topics.size.coerceAtLeast(1) }
     )
-    
-    
-    // 下拉刷新状态 - 暂时禁用，因为 pullrefresh API 可能不可用
-    // val pullRefreshState = rememberPullRefreshState(
-    //     refreshing = isLoading && videos.isNotEmpty(),
-    //     onRefresh = { viewModel.refreshVideos() }
-    // )
     
     // 当HorizontalPager页面变化时，切换topic
     LaunchedEffect(pagerState.currentPage) {
@@ -118,10 +109,17 @@ fun HomeScreen(
         }
     }
     
-    // 话题切换时刷新内容
+    // 话题切换时，如果缓存中没有数据则加载
     LaunchedEffect(selectedTopicId) {
-        if (selectedTopicId != currentTopicId) {
-            viewModel.loadVideos(selectedTopicId, refresh = true)
+        val cachedVideos = videosByTopic[selectedTopicId]
+        if (cachedVideos == null || cachedVideos.isEmpty()) {
+            // 如果缓存中没有数据，加载并更新currentTopicId
+            viewModel.loadVideos(selectedTopicId, refresh = true, updateCurrentTopic = true)
+        } else {
+            // 如果缓存中有数据，只更新currentTopicId，不重新加载
+            if (selectedTopicId != currentTopicId) {
+                viewModel.setCurrentTopicId(selectedTopicId)
+            }
         }
     }
     
@@ -150,26 +148,41 @@ fun HomeScreen(
         ) { page ->
             val currentTopic = topics.getOrNull(page)
             if (currentTopic != null) {
-                // 为每个topic加载对应的视频
+                // 为每个topic加载对应的视频（如果缓存中没有）
+                // 注意：不更新currentTopicId，让每个topic独立加载
                 LaunchedEffect(currentTopic.id) {
-                    if (currentTopic.id != currentTopicId) {
-                        viewModel.loadVideos(currentTopic.id, refresh = true)
+                    val cachedVideos = videosByTopic[currentTopic.id]
+                    if (cachedVideos == null || cachedVideos.isEmpty()) {
+                        viewModel.loadVideos(currentTopic.id, refresh = true, updateCurrentTopic = false)
                     }
                 }
                 
-                // 显示当前topic的视频列表
-                TopicVideoContent(
-                    topicId = currentTopic.id,
-                    videos = if (currentTopic.id == currentTopicId) videos else emptyList(),
-                    isLoading = isLoading && currentTopic.id == currentTopicId,
-                    hasMore = hasMore && currentTopic.id == currentTopicId,
-                    onVideoClick = onVideoClick,
-                    onLoadMore = {
-                        if (currentTopic.id == currentTopicId) {
-                            viewModel.loadMoreVideos()
-                        }
+                // 获取当前topic的视频列表（从缓存中）
+                val topicVideos = videosByTopic[currentTopic.id] ?: emptyList()
+                val topicIsLoading = loadingByTopic[currentTopic.id] ?: false
+                val topicHasMore = hasMoreByTopic[currentTopic.id] ?: true
+                val isCurrentTopic = currentTopic.id == currentTopicId
+                
+                // 刷新状态：只有在当前topic且正在加载且有视频时才显示刷新
+                val isRefreshing = topicIsLoading && topicVideos.isNotEmpty() && isCurrentTopic
+                
+                SwipeRefresh(
+                    state = rememberSwipeRefreshState(isRefreshing),
+                    onRefresh = {
+                        viewModel.refreshVideos(currentTopic.id)
                     }
-                )
+                ) {
+                    TopicVideoContent(
+                        topicId = currentTopic.id,
+                        videos = topicVideos,
+                        isLoading = topicIsLoading,
+                        hasMore = topicHasMore,
+                        onVideoClick = onVideoClick,
+                        onLoadMore = {
+                            viewModel.loadMoreVideos(currentTopic.id)
+                        }
+                    )
+                }
             }
         }
     }

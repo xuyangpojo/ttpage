@@ -44,6 +44,7 @@ class CommentRepository {
             Comment(
                 id = "v001_c001",
                 videoId = "v001",
+                // app/src/main/res/drawable/avatar_u101.png
                 authorId = "u101",
                 authorName = "音乐爱好者小王",
                 content = "卡农这首曲子太经典了！弹得真好，音色很纯净",

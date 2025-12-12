@@ -72,7 +72,12 @@ class CommentViewModel : ViewModel() {
             try {
                 _errorMessage.value = null
                 val newComment = repository.addComment(videoId, content, parentCommentId)
-                _comments.value = _comments.value + newComment
+                // 如果是顶级评论（parentCommentId为null），添加到列表开头；否则添加到末尾（保持树形结构）
+                if (parentCommentId == null) {
+                    _comments.value = listOf(newComment) + _comments.value
+                } else {
+                    _comments.value = _comments.value + newComment
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "评论失败: ${e.message}"
             }

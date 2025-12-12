@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.foundation)
     implementation(libs.androidx.compose.material.icons.extended)
+    implementation(libs.accompanist.swiperefresh)
     testImplementation(libs.junit)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)

@@ -22,7 +22,9 @@ class VideoRepository {
                 likeCount = 128u,
                 commentCount = 45u,
                 isHot = true,
+                // app/src/main/res/drawable/f001.png
                 videoCover = "f001",
+                // app/src/main/res/raw/v001.mp4
                 videoUrl = "v001",
                 topics = listOf("vlog")
             ),
