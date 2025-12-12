@@ -2,69 +2,126 @@ package com.xuyang.ttpage.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.xuyang.ttpage.model.data.Content
-import com.xuyang.ttpage.model.repository.ContentRepository
+import com.xuyang.ttpage.model.data.Video
+import com.xuyang.ttpage.model.repository.TopicRepository
+import com.xuyang.ttpage.model.repository.VideoRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel层：首页视图模型
- * 
- * 职责：
- * 1. 管理内容列表状态
- * 2. 处理数据加载
- * 3. 与Repository通信获取数据
+ * HomeViewModel
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-11
  */
 class HomeViewModel : ViewModel() {
     
-    private val repository = ContentRepository()
+    private val videoRepository = VideoRepository()
+    private val topicRepository = TopicRepository()
     
-    // UI状态：内容列表
-    private val _contents = MutableStateFlow<List<Content>>(emptyList())
-    val contents: StateFlow<List<Content>> = _contents.asStateFlow()
+    private val _videosByTopic = MutableStateFlow<Map<String, List<Video>>>(emptyMap())
+    val videosByTopic: StateFlow<Map<String, List<Video>>> = _videosByTopic.asStateFlow()
     
-    // UI状态：加载状态
-    private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    private val _loadingByTopic = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val loadingByTopic: StateFlow<Map<String, Boolean>> = _loadingByTopic.asStateFlow()
     
-    // UI状态：错误信息
+    private val _hasMoreByTopic = MutableStateFlow<Map<String, Boolean>>(emptyMap())
+    val hasMoreByTopic: StateFlow<Map<String, Boolean>> = _hasMoreByTopic.asStateFlow()
+    
+    // UI状态: 错误
     private val _errorMessage = MutableStateFlow<String?>(null)
     val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
     
+    // UI状态: 当前话题ID
+    private val _currentTopicId = MutableStateFlow<String>("all")
+    val currentTopicId: StateFlow<String> = _currentTopicId.asStateFlow()
+    
+    fun setCurrentTopicId(topicId: String) {
+        _currentTopicId.value = topicId
+    }
+    
     init {
-        // 初始化时加载数据
-        loadContents()
+        loadVideos()
     }
     
-    /**
-     * 根据ID获取内容
-     */
-    fun getContentById(id: String): Content? {
-        return _contents.value.find { it.id == id }
+    fun getVideoById(id: String): Video? {
+        return _videosByTopic.value.values.flatten().find { it.id == id }
     }
     
-    /**
-     * 加载内容列表
-     */
-    fun loadContents() {
+    fun getVideosByTopic(topicId: String): List<Video> {
+        return _videosByTopic.value[topicId] ?: emptyList()
+    }
+    
+    fun isLoadingTopic(topicId: String): Boolean {
+        return _loadingByTopic.value[topicId] ?: false
+    }
+    
+    fun hasMoreForTopic(topicId: String): Boolean {
+        return _hasMoreByTopic.value[topicId] ?: true
+    }
+    
+    fun loadVideos(topicId: String = "all", refresh: Boolean = false, updateCurrentTopic: Boolean = true) {
         viewModelScope.launch {
             try {
-                _isLoading.value = true
+                _loadingByTopic.value = _loadingByTopic.value.toMutableMap().apply {
+                    put(topicId, true)
+                }
                 _errorMessage.value = null
-                _contents.value = repository.getRecommendedContents()
+                if (updateCurrentTopic) {
+                    _currentTopicId.value = topicId
+                }
+                
+                val newVideos = if (topicId == "all") {
+                    videoRepository.getRecommendedVideos()
+                } else {
+                    topicRepository.getVideosByTopic(topicId)
+                }
+                
+                val currentVideos = _videosByTopic.value[topicId] ?: emptyList()
+                val updatedVideos = if (refresh) {
+                    newVideos.shuffled()
+                } else {
+                    val existingIds = currentVideos.map { it.id }.toSet()
+                    val filteredNew = newVideos.filter { it.id !in existingIds }
+                    currentVideos + filteredNew
+                }
+                
+                _videosByTopic.value = _videosByTopic.value.toMutableMap().apply {
+                    put(topicId, updatedVideos)
+                }
+                
+                val hasMoreValue = newVideos.isNotEmpty()
+                _hasMoreByTopic.value = _hasMoreByTopic.value.toMutableMap().apply {
+                    put(topicId, hasMoreValue)
+                }
             } catch (e: Exception) {
                 _errorMessage.value = "加载失败: ${e.message}"
             } finally {
-                _isLoading.value = false
+                _loadingByTopic.value = _loadingByTopic.value.toMutableMap().apply {
+                    put(topicId, false)
+                }
             }
         }
     }
     
-    /**
-     * 清除错误信息
-     */
+    fun refreshVideos(topicId: String? = null) {
+        val targetTopicId = topicId ?: _currentTopicId.value
+        val updateCurrent = topicId == null || topicId == _currentTopicId.value
+        loadVideos(targetTopicId, refresh = true, updateCurrentTopic = updateCurrent)
+    }
+    
+    fun loadMoreVideos(topicId: String? = null) {
+        val targetTopicId = topicId ?: _currentTopicId.value
+        val isLoading = _loadingByTopic.value[targetTopicId] ?: false
+        val hasMore = _hasMoreByTopic.value[targetTopicId] ?: true
+        if (!isLoading && hasMore) {
+            val updateCurrent = topicId == null || topicId == _currentTopicId.value
+            loadVideos(targetTopicId, refresh = false, updateCurrentTopic = updateCurrent)
+        }
+    }
+    
     fun clearError() {
         _errorMessage.value = null
     }

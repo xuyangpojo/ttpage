@@ -1,18 +1,22 @@
 package com.xuyang.ttpage.navigation
 
-import com.xuyang.ttpage.model.data.Content
+import com.xuyang.ttpage.model.data.Video
 
 /**
- * 导航路由定义
+ * Screen 导航路由定义
+ * @brief .
+ * @author xuyang
+ * @date 2025-12-10
  */
 sealed class Screen(val route: String) {
     object Home : Screen("home")
-    data class Detail(val content: Content) : Screen("detail/{contentId}") {
-        fun createRoute(contentId: String) = "detail/$contentId"
+    object Profile : Screen("profile")
+    object Login : Screen("login")
+    object Register : Screen("register")
+    data class Detail(val video: Video) : Screen("detail/{videoId}") {
+        fun createRoute(videoId: String) = "detail/$videoId"
     }
-    
     companion object {
-        const val CONTENT_ID_ARG = "contentId"
+        const val VIDEO_ID_ARG = "videoId"
     }
 }
-

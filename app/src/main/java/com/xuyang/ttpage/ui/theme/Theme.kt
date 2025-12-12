@@ -9,47 +9,61 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+private val TikTokDarkColorScheme = darkColorScheme(
+    primary = TikTokPrimary,
+    onPrimary = Color.Black,
+    primaryContainer = TikTokSecondary,
+    onPrimaryContainer = TikTokOnBackground,
+    
+    secondary = TikTokSecondary,
+    onSecondary = Color.Black,
+    secondaryContainer = TikTokSurfaceVariant,
+    onSecondaryContainer = TikTokOnSurface,
+    
+    tertiary = TikTokTertiary,
+    onTertiary = Color.White,
+    tertiaryContainer = TikTokSurfaceVariant,
+    onTertiaryContainer = TikTokOnSurface,
+    
+    background = TikTokBackground,
+    onBackground = TikTokOnBackground,
+    
+    surface = TikTokSurface,
+    onSurface = TikTokOnSurface,
+    
+    surfaceVariant = TikTokSurfaceVariant,
+    onSurfaceVariant = TikTokOnSurfaceVariant,
+    
+    error = TikTokTertiary,
+    onError = Color.White,
+    errorContainer = TikTokSurfaceVariant,
+    onErrorContainer = TikTokOnSurface,
+    
+    outline = TikTokOnSurfaceVariant,
+    outlineVariant = TikTokSurfaceVariant,
+    
+    scrim = Color.Black.copy(alpha = 0.5f),
+    inverseSurface = TikTokOnBackground,
+    inverseOnSurface = TikTokBackground,
+    inversePrimary = TikTokPrimary
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = TikTokPrimary,
+    secondary = TikTokSecondary,
+    tertiary = TikTokTertiary
 )
 
 @Composable
 fun TTPageTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    darkTheme: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
+    val colorScheme = TikTokDarkColorScheme
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,

@@ -4,52 +4,37 @@ import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Test
 
-/**
- * ResourceHelper集成测试（需要Android Context）
- */
+
 class ResourceHelperTest {
     
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     
     @Test
-    fun `getRawResourceUri should return valid URI format`() {
-        // Given
+    fun testGetRawResourceUri_shouldReturnValidUriFormat() {
         val resourceName = "video1"
-        
-        // When
         val uri = ResourceHelper.getRawResourceUri(context, resourceName)
-        
-        // Then
         assertNotNull(uri)
-        assertTrue(uri.startsWith("android.resource://"))
-        assertTrue(uri.contains(context.packageName))
+        uri?.let {
+            assertTrue(it.startsWith("android.resource://"))
+            assertTrue(it.contains(context.packageName))
+        }
     }
     
     @Test
-    fun `getDrawableResourceUri should return valid URI format`() {
-        // Given
+    fun testGetDrawableResourceUri_shouldReturnValidUriFormat() {
         val resourceName = "ic_launcher_foreground"
-        
-        // When
         val uri = ResourceHelper.getDrawableResourceUri(context, resourceName)
-        
-        // Then
         assertNotNull(uri)
-        assertTrue(uri.startsWith("android.resource://"))
-        assertTrue(uri.contains(context.packageName))
+        uri?.let {
+            assertTrue(it.startsWith("android.resource://"))
+            assertTrue(it.contains(context.packageName))
+        }
     }
     
     @Test
-    fun `getRawResourceUri should handle non-existent resource gracefully`() {
-        // Given
+    fun testGetRawResourceUri_shouldHandleNonExistentResourceGracefully() {
         val nonExistentResource = "non_existent_resource_12345"
-        
-        // When
         val uri = ResourceHelper.getRawResourceUri(context, nonExistentResource)
-        
-        // Then - 应该返回URI格式，即使资源不存在
-        assertNotNull(uri)
-        assertTrue(uri.startsWith("android.resource://"))
+        assertNull(uri)
     }
 }
-

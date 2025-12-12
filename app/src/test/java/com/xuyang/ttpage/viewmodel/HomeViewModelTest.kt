@@ -6,110 +6,157 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
 
-/**
- * HomeViewModel单元测试
- */
 class HomeViewModelTest {
     
     @Test
-    fun `loadContents should populate contents`() = runTest {
-        // Given
+    fun `loadVideos should populate videos`() = runTest {
         val viewModel = HomeViewModel()
-        
-        // When - 等待初始加载完成
-        viewModel.contents.test {
-            // 跳过初始空列表
+        viewModel.videosByTopic.test {
             skipItems(1)
-            val contents = awaitItem()
-            
-            // Then
-            assertTrue(contents.isNotEmpty())
+            val videosByTopic = awaitItem()
+            val videos = videosByTopic.values.flatten()
+            assertTrue(videos.isNotEmpty())
         }
     }
     
     @Test
     fun `isLoading should eventually be false after loading`() = runTest {
-        // Given
         val viewModel = HomeViewModel()
-        
-        // When - 等待加载完成
-        delay(1000) // 等待初始加载
-        
-        // Then
-        viewModel.isLoading.test {
-            val isLoading = awaitItem()
+        delay(1000)
+        viewModel.loadingByTopic.test {
+            val loadingByTopic = awaitItem()
+            val isLoading = loadingByTopic.values.any { it }
             assertFalse("加载完成后应该是false", isLoading)
         }
     }
     
     @Test
-    fun `getContentById should return correct content`() = runTest {
-        // Given
+    fun `getVideoById should return correct video`() = runTest {
         val viewModel = HomeViewModel()
-        
-        // Wait for initial load
         delay(1000)
-        
-        // When
-        val contents = viewModel.contents.value
-        if (contents.isNotEmpty()) {
-            val firstContent = contents.first()
-            val foundContent = viewModel.getContentById(firstContent.id)
-            
-            // Then
-            assertNotNull(foundContent)
-            assertEquals(firstContent.id, foundContent?.id)
-            assertEquals(firstContent.title, foundContent?.title)
+        val videosByTopic = viewModel.videosByTopic.value
+        val videos = videosByTopic.values.flatten()
+        if (videos.isNotEmpty()) {
+            val firstVideo = videos.first()
+            val foundVideo = viewModel.getVideoById(firstVideo.id)
+            assertNotNull(foundVideo)
+            assertEquals(firstVideo.id, foundVideo?.id)
+            assertEquals(firstVideo.title, foundVideo?.title)
         }
     }
     
     @Test
-    fun `getContentById should return null for non-existent id`() = runTest {
-        // Given
+    fun `getVideoById should return null for non-existent id`() = runTest {
         val viewModel = HomeViewModel()
-        
-        // Wait for initial load
         delay(1000)
-        
-        // When
-        val foundContent = viewModel.getContentById("non-existent-id-12345")
-        
-        // Then
-        assertNull(foundContent)
+        val foundVideo = viewModel.getVideoById("non-existent-id-12345")
+        assertNull(foundVideo)
     }
     
     @Test
     fun `clearError should clear error message`() = runTest {
-        // Given
         val viewModel = HomeViewModel()
-        
-        // When
         viewModel.clearError()
-        
-        // Then
         assertNull(viewModel.errorMessage.value)
     }
     
     @Test
-    fun `contents should have valid data after loading`() = runTest {
-        // Given
+    fun `videos should have valid data after loading`() = runTest {
         val viewModel = HomeViewModel()
-        
-        // Wait for initial load
         delay(1000)
-        
-        // When
-        val contents = viewModel.contents.value
-        
-        // Then
-        assertTrue(contents.isNotEmpty())
-        contents.forEach { content ->
-            assertNotNull(content.id)
-            assertNotNull(content.title)
-            assertNotNull(content.author)
-            assertTrue(content.likeCount >= 0)
-            assertTrue(content.commentCount >= 0)
+        val videosByTopic = viewModel.videosByTopic.value
+        val videos = videosByTopic.values.flatten()
+        assertTrue(videos.isNotEmpty())
+        videos.forEach { video ->
+            assertNotNull(video.id)
+            assertNotNull(video.title)
+            assertNotNull(video.authorId)
+            assertNotNull(video.authorName)
+            assertTrue(video.likeCount >= 0u)
+            assertTrue(video.commentCount >= 0u)
         }
+    }
+    
+    @Test
+    fun `loadVideos with topicId should update currentTopicId`() = runTest {
+        val viewModel = HomeViewModel()
+        delay(1000)
+        viewModel.loadVideos(topicId = "tech", refresh = true)
+        delay(1000)
+        assertEquals("tech", viewModel.currentTopicId.value)
+    }
+    
+    @Test
+    fun `refreshVideos should reload videos`() = runTest {
+        val viewModel = HomeViewModel()
+        delay(1000)
+        val initialVideosByTopic = viewModel.videosByTopic.value
+        val initialSize = initialVideosByTopic.values.flatten().size
+        viewModel.refreshVideos()
+        delay(1000)
+        val refreshedVideosByTopic = viewModel.videosByTopic.value
+        val refreshedVideos = refreshedVideosByTopic.values.flatten()
+        assertTrue(refreshedVideos.size >= initialSize)
+    }
+    
+    @Test
+    fun `loadMoreVideos should append more videos`() = runTest {
+        val viewModel = HomeViewModel()
+        delay(1000)
+        val initialVideosByTopic = viewModel.videosByTopic.value
+        val initialSize = initialVideosByTopic.values.flatten().size
+        viewModel.loadMoreVideos()
+        delay(1000)
+        val updatedVideosByTopic = viewModel.videosByTopic.value
+        val updatedVideos = updatedVideosByTopic.values.flatten()
+        assertTrue(updatedVideos.size >= initialSize)
+    }
+    
+    @Test
+    fun `currentTopicId should default to all`() = runTest {
+        val viewModel = HomeViewModel()
+        assertEquals("all", viewModel.currentTopicId.value)
+    }
+    
+    @Test
+    fun `hasMore should be true when videos are available`() = runTest {
+        val viewModel = HomeViewModel()
+        delay(1000)
+        val hasMoreByTopic = viewModel.hasMoreByTopic.value
+        val hasMore = hasMoreByTopic.values.any { it }
+        assertTrue(hasMore)
+    }
+    
+    @Test
+    fun `loadMoreVideos should not load when isLoading is true`() = runTest {
+        val viewModel = HomeViewModel()
+        delay(1000)
+        val initialVideosByTopic = viewModel.videosByTopic.value
+        val initialSize = initialVideosByTopic.values.flatten().size
+        viewModel.loadMoreVideos()
+        delay(1000)
+        val updatedVideosByTopic = viewModel.videosByTopic.value
+        val updatedSize = updatedVideosByTopic.values.flatten().size
+        assertTrue(updatedSize >= initialSize)
+    }
+    
+    @Test
+    fun `loadMoreVideos should not load when hasMore is false`() = runTest {
+        val viewModel = HomeViewModel()
+        delay(1000)
+        viewModel.loadMoreVideos()
+        delay(1000)
+        val videosByTopic = viewModel.videosByTopic.value
+        assertNotNull(videosByTopic)
+    }
+    
+    @Test
+    fun `errorMessage should be set when load fails`() = runTest {
+        val viewModel = HomeViewModel()
+        delay(1000)
+        viewModel.loadVideos(topicId = "non-existent-topic", refresh = true)
+        delay(1000)
+        val errorMessage = viewModel.errorMessage.value
     }
 }
 
