@@ -11,9 +11,10 @@ class HomeViewModelTest {
     @Test
     fun `loadVideos should populate videos`() = runTest {
         val viewModel = HomeViewModel()
-        viewModel.videos.test {
+        viewModel.videosByTopic.test {
             skipItems(1)
-            val videos = awaitItem()
+            val videosByTopic = awaitItem()
+            val videos = videosByTopic.values.flatten()
             assertTrue(videos.isNotEmpty())
         }
     }
@@ -22,8 +23,9 @@ class HomeViewModelTest {
     fun `isLoading should eventually be false after loading`() = runTest {
         val viewModel = HomeViewModel()
         delay(1000)
-        viewModel.isLoading.test {
-            val isLoading = awaitItem()
+        viewModel.loadingByTopic.test {
+            val loadingByTopic = awaitItem()
+            val isLoading = loadingByTopic.values.any { it }
             assertFalse("加载完成后应该是false", isLoading)
         }
     }
@@ -32,7 +34,8 @@ class HomeViewModelTest {
     fun `getVideoById should return correct video`() = runTest {
         val viewModel = HomeViewModel()
         delay(1000)
-        val videos = viewModel.videos.value
+        val videosByTopic = viewModel.videosByTopic.value
+        val videos = videosByTopic.values.flatten()
         if (videos.isNotEmpty()) {
             val firstVideo = videos.first()
             val foundVideo = viewModel.getVideoById(firstVideo.id)
@@ -61,7 +64,8 @@ class HomeViewModelTest {
     fun `videos should have valid data after loading`() = runTest {
         val viewModel = HomeViewModel()
         delay(1000)
-        val videos = viewModel.videos.value
+        val videosByTopic = viewModel.videosByTopic.value
+        val videos = videosByTopic.values.flatten()
         assertTrue(videos.isNotEmpty())
         videos.forEach { video ->
             assertNotNull(video.id)
@@ -86,10 +90,12 @@ class HomeViewModelTest {
     fun `refreshVideos should reload videos`() = runTest {
         val viewModel = HomeViewModel()
         delay(1000)
-        val initialSize = viewModel.videos.value.size
+        val initialVideosByTopic = viewModel.videosByTopic.value
+        val initialSize = initialVideosByTopic.values.flatten().size
         viewModel.refreshVideos()
         delay(1000)
-        val refreshedVideos = viewModel.videos.value
+        val refreshedVideosByTopic = viewModel.videosByTopic.value
+        val refreshedVideos = refreshedVideosByTopic.values.flatten()
         assertTrue(refreshedVideos.size >= initialSize)
     }
     
@@ -97,10 +103,12 @@ class HomeViewModelTest {
     fun `loadMoreVideos should append more videos`() = runTest {
         val viewModel = HomeViewModel()
         delay(1000)
-        val initialSize = viewModel.videos.value.size
+        val initialVideosByTopic = viewModel.videosByTopic.value
+        val initialSize = initialVideosByTopic.values.flatten().size
         viewModel.loadMoreVideos()
         delay(1000)
-        val updatedVideos = viewModel.videos.value
+        val updatedVideosByTopic = viewModel.videosByTopic.value
+        val updatedVideos = updatedVideosByTopic.values.flatten()
         assertTrue(updatedVideos.size >= initialSize)
     }
     
@@ -114,17 +122,22 @@ class HomeViewModelTest {
     fun `hasMore should be true when videos are available`() = runTest {
         val viewModel = HomeViewModel()
         delay(1000)
-        assertTrue(viewModel.hasMore.value)
+        val hasMoreByTopic = viewModel.hasMoreByTopic.value
+        val hasMore = hasMoreByTopic.values.any { it }
+        assertTrue(hasMore)
     }
     
     @Test
     fun `loadMoreVideos should not load when isLoading is true`() = runTest {
         val viewModel = HomeViewModel()
         delay(1000)
-        val initialSize = viewModel.videos.value.size
+        val initialVideosByTopic = viewModel.videosByTopic.value
+        val initialSize = initialVideosByTopic.values.flatten().size
         viewModel.loadMoreVideos()
         delay(1000)
-        assertTrue(viewModel.videos.value.size >= initialSize)
+        val updatedVideosByTopic = viewModel.videosByTopic.value
+        val updatedSize = updatedVideosByTopic.values.flatten().size
+        assertTrue(updatedSize >= initialSize)
     }
     
     @Test
@@ -133,7 +146,8 @@ class HomeViewModelTest {
         delay(1000)
         viewModel.loadMoreVideos()
         delay(1000)
-        assertNotNull(viewModel.videos.value)
+        val videosByTopic = viewModel.videosByTopic.value
+        assertNotNull(videosByTopic)
     }
     
     @Test
